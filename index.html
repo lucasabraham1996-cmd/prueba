@@ -94,15 +94,29 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, deleteDoc, setDoc, getDoc, updateDoc, increment, doc, query, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Configuración ---
-        const firebaseConfig = JSON.parse(__firebase_config || '{}');
+        // --- Configuración Segura para GitHub ---
+        // Si __firebase_config no existe (GitHub), usa un objeto vacío para no romper el script.
+        // IMPORTANTE: Para que funcione en GitHub, debes reemplazar el objeto vacío {} dentro del catch 
+        // con tu configuración real de Firebase: { apiKey: "...", authDomain: "...", ... }
+        let firebaseConfig;
+        try {
+            firebaseConfig = JSON.parse(__firebase_config);
+        } catch (e) {
+            console.warn("Configuración de Firebase no detectada automáticamente.");
+            firebaseConfig = {}; // Poner aquí tu config real para producción
+        }
+        
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
         let app, auth, db;
         try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
+            if (firebaseConfig && Object.keys(firebaseConfig).length > 0) {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+            } else {
+                console.warn("Firebase no inicializado: Faltan credenciales.");
+            }
         } catch (e) {
             console.error("Error inicializando Firebase:", e);
         }
@@ -130,7 +144,7 @@
         const UserMinus = (props) => <IconBase {...props}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></IconBase>;
         const Newspaper = (props) => <IconBase {...props}><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></IconBase>;
         const Instagram = (props) => <IconBase {...props}><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></IconBase>;
-        const Twitter = (props) => <IconBase {...props}><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></IconBase>; // Simplified bird
+        const Twitter = (props) => <IconBase {...props}><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></IconBase>;
         const Eye = (props) => <IconBase {...props}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></IconBase>;
 
         // --- Mapeo de Escudos ---
@@ -246,6 +260,14 @@
             const [editingItemId, setEditingItemId] = React.useState(null);
 
             React.useEffect(() => {
+                // Verificar modo Admin via URL (?admin=true)
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('admin') === 'true') {
+                    setIsAdmin(true);
+                }
+
+                if (!auth) return; // Protección si Firebase no está configurado
+
                 const initAuth = async () => {
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                         await signInWithCustomToken(auth, __initial_auth_token);
@@ -258,7 +280,10 @@
             }, []);
 
             React.useEffect(() => {
-                if (!user) return;
+                if (!user || !db) {
+                    setLoading(false); // Para mostrar la app aunque falle Firebase en GitHub
+                    return;
+                }
                 
                 const visitRef = doc(db, 'artifacts', appId, 'public', 'data', 'counters_v2', 'global');
                 const updateVisits = async () => {
@@ -293,7 +318,7 @@
 
             const handleSaveItem = async (e) => {
                 e.preventDefault();
-                if (!user || !isAdmin) return;
+                if (!user || !isAdmin || !db) return;
                 try {
                     const payload = { ...newItemData, category: activeTab, updatedAt: serverTimestamp() };
                     if (!editingItemId) payload.createdAt = serverTimestamp();
@@ -310,7 +335,7 @@
             };
 
             const handleDeleteItem = async (id) => {
-                if (!user || !isAdmin) return;
+                if (!user || !isAdmin || !db) return;
                 if (confirm('¿Borrar registro?')) {
                     try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'talleres_stats', id)); } catch (e) { console.error(e); }
                 }
@@ -318,7 +343,7 @@
 
             const handleUpdateFixture = async (e) => {
                 e.preventDefault();
-                if (!user || !isAdmin || !editingMatchId) return;
+                if (!user || !isAdmin || !editingMatchId || !db) return;
                 try {
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'fixture_metadata', editingMatchId), { ...matchEditData, updatedAt: serverTimestamp() });
                     setEditingMatchId(null);
@@ -326,27 +351,26 @@
                 } catch (e) { console.error(e); }
             };
 
-            // Mock Data Generator para Posiciones
+            // Mock Data Generator para Posiciones (Todos en 0)
             const getPosicionesData = () => {
                 // Filtramos Rosario Central y Belgrano
                 const excludedTeams = ["Rosario Central", "Belgrano"];
                 const teams = INITIAL_FIXTURE.map(m => m.rival).filter(t => !excludedTeams.includes(t));
                 teams.push("Talleres"); // Agregar a Talleres
                 
-                // Generar datos aleatorios consistentes basados en el nombre
-                return teams.map((team, index) => {
-                    const seed = team.length;
+                // Generar datos EN CERO para todos
+                return teams.map((team) => {
                     return {
                         name: team,
-                        pts: Math.floor(Math.random() * 15) + (team === 'Talleres' ? 20 : 5), // Talleres arriba siempre ;)
-                        pj: 10,
-                        pg: Math.floor(Math.random() * 5),
-                        pe: Math.floor(Math.random() * 3),
-                        pp: Math.floor(Math.random() * 2),
-                        gf: Math.floor(Math.random() * 15),
-                        gc: Math.floor(Math.random() * 10),
+                        pts: 0,
+                        pj: 0,
+                        pg: 0,
+                        pe: 0,
+                        pp: 0,
+                        gf: 0,
+                        gc: 0,
                     };
-                }).sort((a, b) => b.pts - a.pts);
+                }).sort((a, b) => a.name.localeCompare(b.name)); // Orden alfabético inicial
             };
 
             const renderInicio = () => (
@@ -443,6 +467,7 @@
                         const logoUrl = meta.shieldUrl || getLogo(match.rival);
                         const isEditing = editingMatchId === match.id;
                         const hasResult = meta.goalsT !== undefined && meta.goalsT !== "" && meta.goalsR !== undefined && meta.goalsR !== "";
+                        const isTalleresLocal = match.condition === 'Local';
                         
                         // Determinar resultado visual
                         let resultColor = "text-white";
@@ -481,6 +506,21 @@
                             );
                         }
 
+                        // Componentes de Equipo (para ordenar Local/Visitante)
+                        const TalleresComponent = (
+                            <div className="flex flex-col items-center gap-2 flex-1">
+                                <img src="https://i.postimg.cc/Gtv47NBw/Talleres.png" className="w-16 h-16 object-contain drop-shadow-[0_0_10px_rgba(0,0,255,0.3)]" />
+                                <span className="font-bold text-sm tracking-tighter">TALLERES</span>
+                            </div>
+                        );
+
+                        const RivalComponent = (
+                            <div className="flex flex-col items-center gap-2 flex-1">
+                                <img src={logoUrl} className="w-16 h-16 object-contain drop-shadow-md" onError={(e) => e.target.src='https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg'}/>
+                                <span className="font-bold text-sm tracking-tighter text-center leading-tight">{match.rival.toUpperCase()}</span>
+                            </div>
+                        );
+
                         return (
                             <div key={match.id} className="glass-card p-0 overflow-hidden hover:bg-white/5 transition-all relative">
                                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-900 via-blue-500 to-blue-900 opacity-50"></div>
@@ -496,18 +536,15 @@
 
                                     {/* Cuerpo Partido */}
                                     <div className="flex items-center justify-between">
-                                        {/* Talleres */}
-                                        <div className="flex flex-col items-center gap-2 flex-1">
-                                            <img src="https://i.postimg.cc/Gtv47NBw/Talleres.png" className="w-16 h-16 object-contain drop-shadow-[0_0_10px_rgba(0,0,255,0.3)]" />
-                                            <span className="font-bold text-sm tracking-tighter">TALLERES</span>
-                                        </div>
+                                        {/* Orden Dinámico */}
+                                        {isTalleresLocal ? TalleresComponent : RivalComponent}
 
                                         {/* VS / Resultado */}
                                         <div className="flex flex-col items-center justify-center w-24">
                                             {hasResult ? (
                                                 <div className={`px-3 py-1 rounded-lg border ${resultBg} backdrop-blur-md`}>
                                                     <span className={`text-2xl font-black ${resultColor} tracking-widest`}>
-                                                        {meta.goalsT}-{meta.goalsR}
+                                                        {isTalleresLocal ? `${meta.goalsT}-${meta.goalsR}` : `${meta.goalsR}-${meta.goalsT}`}
                                                     </span>
                                                 </div>
                                             ) : (
@@ -519,11 +556,8 @@
                                             </div>
                                         </div>
 
-                                        {/* Rival */}
-                                        <div className="flex flex-col items-center gap-2 flex-1">
-                                            <img src={logoUrl} className="w-16 h-16 object-contain drop-shadow-md" onError={(e) => e.target.src='https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg'}/>
-                                            <span className="font-bold text-sm tracking-tighter text-center leading-tight">{match.rival.toUpperCase()}</span>
-                                        </div>
+                                        {/* Orden Dinámico */}
+                                        {isTalleresLocal ? RivalComponent : TalleresComponent}
                                     </div>
                                 </div>
                                 
@@ -560,7 +594,7 @@
                                         return (
                                             <tr key={index} className={`border-b border-white/5 ${isTalleres ? 'bg-blue-900/30' : ''} ${isQualifying ? 'bg-green-900/10' : ''}`}>
                                                 <td className="px-4 py-3 text-center font-bold">
-                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center mx-auto ${index < 3 ? 'bg-yellow-500 text-black' : isQualifying ? 'bg-green-500/20 text-green-400' : 'text-gray-500'}`}>
+                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center mx-auto ${isQualifying ? 'bg-green-500/20 text-green-400' : 'text-gray-500'}`}>
                                                         {index + 1}
                                                     </div>
                                                 </td>
@@ -684,10 +718,6 @@
                                         <span className="font-mono font-bold text-xs text-blue-200">{visits.toLocaleString()} EN LÍNEA</span>
                                     </div>
                                 )}
-                                <div className="flex bg-black/30 rounded-lg p-1 border border-white/10">
-                                    <button onClick={() => setIsAdmin(false)} className={`px-3 py-1 rounded text-[10px] font-bold uppercase transition-all ${!isAdmin ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>Vista Hincha</button>
-                                    <button onClick={() => setIsAdmin(true)} className={`px-3 py-1 rounded text-[10px] font-bold uppercase transition-all ${isAdmin ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>Acceso Admin</button>
-                                </div>
                             </div>
                         </header>
 
