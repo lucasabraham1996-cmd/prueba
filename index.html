@@ -2,563 +2,361 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Contenidos CCAP</title>
-    
-    <!-- Tailwind CSS (Framework de diseño Ultra Moderno) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Lucide Icons (Íconos vectoriales modernos) -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Configuración personalizada de Tailwind -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-out',
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: '0', transform: 'translateY(10px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-
-    <style>
-        /* Tipografía importada (Google Fonts - Inter) */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        
-        /* Ocultar scrollbar pero permitir scroll */
-        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
-        html, body { width: 100%; margin: 0; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Widget CCAP - Cursos y Carreras</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    * { box-sizing: border-box; }
+    html, body { width: 100%; margin: 0; padding: 0; overflow-x: hidden; }
+    body { font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f8fafc; color: #0f2742; }
+    .ccap-wrap { width: 100%; max-width: none; margin: 0; padding: 14px; }
+    body.embed { background: transparent; }
+    body.embed .ccap-wrap { padding: 0; }
+    .ccap-table { width: 100%; border-collapse: separate; border-spacing: 0 14px; table-layout: auto; }
+    .ccap-table thead th { padding: 0 18px 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .14em; color: #94a3b8; white-space: nowrap; }
+    .ccap-row { background: #fff; box-shadow: 0 3px 18px rgba(15, 23, 42, .045); transition: box-shadow .2s ease, transform .2s ease; }
+    .ccap-row:hover { box-shadow: 0 8px 28px rgba(15, 23, 42, .08); }
+    .ccap-row td { padding: 18px 20px; vertical-align: middle; border-top: 1px solid rgba(226,232,240,.65); border-bottom: 1px solid rgba(226,232,240,.65); }
+    .ccap-row td:first-child { border-left: 1px solid rgba(226,232,240,.65); border-radius: 22px 0 0 22px; width: 280px; min-width: 240px; }
+    .ccap-row td:last-child { border-right: 1px solid rgba(226,232,240,.65); border-radius: 0 22px 22px 0; }
+    .first-cell { min-height: 58px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+    .career-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 15px; line-height: 1.22; font-weight: 850; letter-spacing: -.015em; }
+    .plan-badge { display: inline-flex; align-items: center; width: fit-content; padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; background: rgba(255,255,255,.24); border: 1px solid rgba(255,255,255,.24); }
+    .badge-2x1 { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 999px; font-size: 11px; line-height: 1; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; background: #ef1746; color: #fff; border: 2px solid rgba(255,255,255,.78); box-shadow: 0 8px 18px rgba(239,23,70,.26); }
+    .mobile-label { display: none; }
+    .modality-pill { display: inline-flex; align-items: center; justify-content: center; padding: 8px 14px; border-radius: 999px; background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f2742; font-size: 11px; font-weight: 800; white-space: nowrap; }
+    .price { font-weight: 900; color: #061d36; font-size: 15px; white-space: nowrap; }
+    .normal-text { color: #18324d; font-size: 14px; font-weight: 600; line-height: 1.45; white-space: pre-line; }
+    .pdf-btn, .link-btn { display: inline-flex; align-items: center; gap: 7px; width: fit-content; border-radius: 999px; padding: 9px 14px; font-size: 12px; font-weight: 900; text-decoration: none; transition: transform .2s ease, box-shadow .2s ease; white-space: nowrap; }
+    .pdf-btn { background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; }
+    .link-btn { background: #009ee3; color: white; box-shadow: 0 8px 18px rgba(0,158,227,.22); }
+    .pdf-btn:hover, .link-btn:hover { transform: translateY(-1px); }
+    .controls { display: flex; gap: 12px; justify-content: space-between; align-items: center; margin-bottom: 18px; padding: 12px; border-radius: 22px; border: 1px solid #e2e8f0; background: rgba(255,255,255,.72); backdrop-filter: blur(16px); }
+    .controls input { width: min(420px, 100%); border: 1px solid #e2e8f0; border-radius: 16px; padding: 13px 15px; font-weight: 700; outline: none; }
+    .tab-btn { border: 0; cursor: pointer; padding: 11px 16px; border-radius: 14px; font-weight: 900; color: #475569; background: #f1f5f9; }
+    .tab-btn.active { background: #0f172a; color: white; }
+    .status-box { width: 100%; min-height: 240px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 26px; border: 1px solid #e2e8f0; background: rgba(255,255,255,.78); text-align: center; padding: 30px; }
+    .error-box { background: #fff1f2; border-color: #fecdd3; color: #be123c; }
+    .header-with-icon { display: flex; align-items: center; gap: 9px; }
+    .center-col { text-align: center; }
+    .center-col .cell-content { display: flex; justify-content: center; }
+    .cell-content { width: 100%; }
+    @media (max-width: 900px) {
+      .ccap-wrap { padding: 8px; }
+      .controls { flex-direction: column; align-items: stretch; }
+      .ccap-table, .ccap-table thead, .ccap-table tbody, .ccap-table tr, .ccap-table td { display: block; width: 100%; }
+      .ccap-table { border-spacing: 0; }
+      .ccap-table thead { display: none; }
+      .ccap-row { margin-bottom: 16px; border-radius: 22px; overflow: hidden; display: block; }
+      .ccap-row td, .ccap-row td:first-child, .ccap-row td:last-child { border-left: 1px solid rgba(226,232,240,.65); border-right: 1px solid rgba(226,232,240,.65); border-top: 0; border-bottom: 1px solid #eef2f7; border-radius: 0; width: 100%; min-width: 0; padding: 14px 16px; }
+      .ccap-row td:first-child { border-top: 1px solid rgba(226,232,240,.65); border-radius: 22px 22px 0 0; padding: 18px; }
+      .ccap-row td:last-child { border-radius: 0 0 22px 22px; }
+      .mobile-cell { display: flex !important; align-items: center; justify-content: space-between; gap: 15px; }
+      .mobile-label { display: flex; align-items: center; gap: 6px; color: #94a3b8; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; min-width: 38%; }
+      .cell-content { width: 62%; display: flex; justify-content: flex-end; text-align: right; }
+      .center-col { text-align: right; }
+      .center-col .cell-content { justify-content: flex-end; }
+      .career-title { font-size: 16px; }
+      .normal-text { font-size: 13px; }
+      .price { font-size: 14px; }
+    }
+  </style>
 </head>
-<body id="body-root" class="bg-[#F8FAFC] text-slate-800 font-sans min-h-screen flex flex-col transition-colors duration-300">
+<body>
+  <div id="app" class="ccap-wrap"></div>
 
-    <!-- Contenedor Principal renderizado por JS -->
-    <div id="app-root" class="flex-1 w-full flex flex-col"></div>
+  <script>
+    const URLS = {
+      cursos: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ37C-OXiUfM2JeZj_91yhe71ZRwfwLh7Im3IbHytbEbHg-Mm2TWuahRDeuypJ6aXSKAYrU6hRDACJ3/pub?output=csv",
+      carreras: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTXqijV2xBtqvXAv17EXrDpJfP67w8zklebNx1X87l4wS2dG4GicqnXD8G4TU5bFX1XSx-xhHmrrE82/pub?output=csv"
+    };
 
-    <script>
-        // --- 1. CONFIGURACIÓN Y ESTADO ---
-        const URLS = {
-            cursos: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ37C-OXiUfM2JeZj_91yhe71ZRwfwLh7Im3IbHytbEbHg-Mm2TWuahRDeuypJ6aXSKAYrU6hRDACJ3/pub?output=csv",
-            carreras: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTXqijV2xBtqvXAv17EXrDpJfP67w8zklebNx1X87l4wS2dG4GicqnXD8G4TU5bFX1XSx-xhHmrrE82/pub?output=csv"
-        };
+    const params = new URLSearchParams(window.location.search);
+    const isEmbed = params.get('embed') === 'true';
+    const initialType = params.get('type') === 'carreras' ? 'carreras' : 'cursos';
 
-        // Estado Global de la App
-        const state = {
-            isEmbed: new URLSearchParams(window.location.search).get('embed') === 'true',
-            urlType: new URLSearchParams(window.location.search).get('type'),
-            activeTab: 'cursos',
-            headers: [],
-            rows: [],
-            loading: true,
-            error: null,
-            searchTerm: '',
-            gadgetType: 'cursos',
-            copied: false
-        };
+    const state = {
+      activeTab: initialType,
+      headers: [],
+      rows: [],
+      loading: true,
+      error: null,
+      searchTerm: ''
+    };
 
-        // --- LÓGICA DE COLORES EXACTOS POR NOMBRE ---
-        function normalizeHexColor(value) {
-            if (!value) return null;
-            const text = String(value).trim();
-            if (!text) return null;
+    if (isEmbed) document.body.classList.add('embed');
 
-            // Acepta tanto una celda que sea solo "#39589A" como una celda con el color debajo del nombre.
-            const matchWithHash = text.match(/#[0-9A-Fa-f]{6}\b/);
-            if (matchWithHash) return matchWithHash[0];
+    function parseCSV(str) {
+      const arr = [];
+      let quote = false, row = 0, col = 0;
+      for (let c = 0; c < str.length; c++) {
+        const cc = str[c], nc = str[c + 1];
+        arr[row] = arr[row] || [];
+        arr[row][col] = arr[row][col] || '';
+        if (cc === '"' && quote && nc === '"') { arr[row][col] += cc; c++; continue; }
+        if (cc === '"') { quote = !quote; continue; }
+        if (cc === ',' && !quote) { col++; continue; }
+        if (cc === '\r' && nc === '\n' && !quote) { row++; col = 0; c++; continue; }
+        if ((cc === '\n' || cc === '\r') && !quote) { row++; col = 0; continue; }
+        arr[row][col] += cc;
+      }
+      return arr.filter(r => r.some(cell => String(cell || '').trim() !== ''));
+    }
 
-            const matchWithoutHash = text.match(/(?:^|\s)([0-9A-Fa-f]{6})(?:\s|$)/);
-            if (matchWithoutHash) return `#${matchWithoutHash[1]}`;
+    async function fetchTextWithFallback(url) {
+      const cacheBust = (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+      const direct = url + cacheBust;
+      const candidates = [
+        direct,
+        'https://api.allorigins.win/raw?url=' + encodeURIComponent(direct),
+        'https://corsproxy.io/?' + encodeURIComponent(direct)
+      ];
+      let lastError = null;
+      for (const candidate of candidates) {
+        try {
+          const res = await fetch(candidate, { cache: 'no-store' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const text = await res.text();
+          if (text && text.trim().length > 0) return text;
+        } catch (err) { lastError = err; }
+      }
+      throw lastError || new Error('No se pudo leer el CSV.');
+    }
 
-            return null;
-        }
+    async function fetchData() {
+      state.loading = true;
+      state.error = null;
+      render();
+      try {
+        const text = await fetchTextWithFallback(URLS[state.activeTab]);
+        const data = parseCSV(text);
+        if (!data.length) throw new Error('El CSV está vacío.');
+        state.headers = data[0].map(h => String(h || '').trim());
+        state.rows = data.slice(1);
+      } catch (err) {
+        state.error = err && err.message ? err.message : 'Failed to fetch';
+      } finally {
+        state.loading = false;
+        render();
+      }
+    }
 
-        function cleanDisplayName(value) {
-            return String(value || '')
-                .split(/\r?\n/)
-                .map(line => line.trim())
-                .filter(line => line && !normalizeHexColor(line))
-                .join(' ')
-                .replace(/2x1/ig, '')
-                .replace(/\(\s*\)/g, '')
-                .replace(/-\s*$/g, '')
-                .replace(/\s{2,}/g, ' ')
-                .trim();
-        }
+    function normalize(txt) {
+      return String(txt || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
 
-        function getColumnIndexByKeywords(keywords) {
-            return state.headers.findIndex(h => {
-                const normalized = String(h || '').toLowerCase();
-                return keywords.some(keyword => normalized.includes(keyword));
-            });
-        }
+    function isHexColor(value) {
+      return /^#(?:[0-9a-fA-F]{3}){1,2}$/.test(String(value || '').trim());
+    }
 
-        function getRowStyle(tab, name, rowIndex, row = []) {
-            // En carreras, el color puede venir debajo del nombre dentro de la primera columna.
-            const firstColumnColor = tab === 'carreras' ? normalizeHexColor(name) : null;
+    function expandHex(hex) {
+      hex = String(hex || '').trim();
+      if (/^#[0-9a-fA-F]{3}$/.test(hex)) {
+        return '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
+      }
+      return hex;
+    }
 
-            // También se mantiene la posibilidad de usar una columna separada color/hexa/hex/código.
-            const colorIndex = getColumnIndexByKeywords(['color', 'hexa', 'hex', 'código', 'codigo']);
-            const sheetColor = colorIndex !== -1 ? normalizeHexColor(row[colorIndex]) : null;
-            const selectedColor = firstColumnColor || sheetColor;
+    function getContrastColor(hex) {
+      const clean = expandHex(hex).replace('#', '');
+      if (clean.length !== 6) return '#ffffff';
+      const r = parseInt(clean.slice(0, 2), 16);
+      const g = parseInt(clean.slice(2, 4), 16);
+      const b = parseInt(clean.slice(4, 6), 16);
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      return luminance > 0.64 ? '#0f2742' : '#ffffff';
+    }
 
-            if (selectedColor) {
-                return { bg: selectedColor, text: 'text-white' };
-            }
+    function parseFirstCell(raw) {
+      const lines = String(raw || '')
+        .split(/\r?\n/)
+        .map(l => l.trim())
+        .filter(Boolean);
 
-            if (tab === 'carreras') {
-                const n = cleanDisplayName(name).toLowerCase();
-                // Fallback por palabra clave si la fila todavía no tiene código hexa en Sheet
-                if (n.includes('marketing')) return { bg: '#EF6B01', text: 'text-white' };
-                if (n.includes('administración') || n.includes('administracion')) return { bg: '#8F9E4C', text: 'text-white' };
-                if (n.includes('recursos humanos') || n.includes('rrhh')) return { bg: '#B18DB3', text: 'text-white' };
-                if (n.includes('sistemas') || n.includes('analista')) return { bg: '#00A9CB', text: 'text-white' };
-                if (n.includes('web') || n.includes('desarrollo')) return { bg: '#A68F74', text: 'text-white' };
-                if (n.includes('inteligencia') || n.includes('artificial') || n.includes('ia')) return { bg: '#39589A', text: 'text-white' };
-                if (n.includes('higiene') || n.includes('seguridad')) return { bg: '#F2C118', text: 'text-[#4A4A4A]' };
-                if (n.includes('inmobiliaria') || n.includes('gestión')) return { bg: '#B82E34', text: 'text-white' };
+      const hexLine = lines.find(isHexColor);
+      const color = hexLine ? expandHex(hexLine) : null;
 
-                const fallback = ['#EF6B01', '#8F9E4C', '#B18DB3', '#00A9CB', '#A68F74', '#39589A', '#F2C118', '#B82E34'];
-                return { bg: fallback[rowIndex % fallback.length], text: 'text-white' };
-            } else {
-                const cursosColors = ['#F29C54', '#A6C28F', '#3E75C3'];
-                return { bg: cursosColors[rowIndex % cursosColors.length], text: 'text-white' };
-            }
-        }
+      const cleanLines = lines.filter(line => !isHexColor(line) && !/^2\s*x\s*1$/i.test(line));
+      let name = cleanLines.join(' ').replace(/\b2\s*x\s*1\b/ig, '').replace(/\s{2,}/g, ' ').trim();
+      if (!name) name = String(raw || '').replace(/\b2\s*x\s*1\b/ig, '').trim();
 
-        function shouldHideColumn(headerText) {
-            const h = String(headerText || '').toLowerCase();
-            return h.includes('plan') || h.includes('color') || h.includes('hexa') || h.includes('hex') || h.includes('código') || h.includes('codigo');
-        }
+      return { name, color };
+    }
 
-        // --- 2. INICIALIZACIÓN ---
-        function init() {
-            if (state.isEmbed) {
-                document.getElementById('body-root').classList.remove('bg-[#F8FAFC]');
-                document.getElementById('body-root').classList.add('bg-transparent');
-                state.activeTab = (state.urlType === 'carreras') ? 'carreras' : 'cursos';
-            }
+    function rowHas2x1(row) {
+      return row.some(cell => /\b2\s*x\s*1\b/i.test(String(cell || '')));
+    }
 
-            renderApp();
-            
-            if (state.activeTab === 'cursos' || state.activeTab === 'carreras') {
-                fetchData();
-            }
-        }
+    function headerIndexIncludes(wordList) {
+      const words = Array.isArray(wordList) ? wordList : [wordList];
+      return state.headers.findIndex(h => words.some(w => normalize(h).includes(normalize(w))));
+    }
 
-        // --- 3. LÓGICA DE DATOS ---
-        const parseCSV = (str) => {
-            const arr = [];
-            let quote = false, row = 0, col = 0;
-            for (let c = 0; c < str.length; c++) {
-                let cc = str[c], nc = str[c+1];
-                arr[row] = arr[row] || [];
-                arr[row][col] = arr[row][col] || '';
+    function isHiddenColumn(header, index) {
+      const h = normalize(header);
+      // Ocultamos columnas auxiliares, pero seguimos usándolas para detectar color/2x1.
+      return h.includes('color') || h.includes('hexa') || h.includes('hexadecimal') || h === '2x1' || h.includes('promocion');
+    }
 
-                if (cc === '"' && quote && nc === '"') { arr[row][col] += cc; ++c; continue; }
-                if (cc === '"') { quote = !quote; continue; }
-                if (cc === ',' && !quote) { ++col; continue; }
-                if (cc === '\r' && nc === '\n' && !quote) { ++row; col = 0; ++c; continue; }
-                if (cc === '\n' && !quote) { ++row; col = 0; continue; }
-                if (cc === '\r' && !quote) { ++row; col = 0; continue; }
-                arr[row][col] += cc;
-            }
-            return arr.filter(row => row.some(cell => cell.trim() !== ''));
-        };
+    function getRowColor(row, rowIndex, firstParsed) {
+      if (firstParsed.color) return firstParsed.color;
+      const colorIndex = headerIndexIncludes(['color', 'hexa', 'hexadecimal']);
+      if (colorIndex !== -1 && isHexColor(row[colorIndex])) return expandHex(row[colorIndex]);
+      const fallbackCarreras = ['#fd640f', '#829d3c', '#b98dc0', '#00abd6', '#a48f7a', '#3655a2', '#f2c118', '#b82e34'];
+      const fallbackCursos = ['#F29C54', '#A6C28F', '#3E75C3'];
+      return (state.activeTab === 'carreras' ? fallbackCarreras : fallbackCursos)[rowIndex % (state.activeTab === 'carreras' ? fallbackCarreras.length : fallbackCursos.length)];
+    }
 
-        function buildFetchUrls(type) {
-            const directUrl = URLS[type];
-            const gvizUrl = directUrl.replace('/pub?output=csv', '/pub?gid=0&single=true&output=csv');
-            return [
-                directUrl,
-                gvizUrl,
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`,
-                `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(directUrl)}`
-            ];
-        }
+    function getHeaderIcon(headerText) {
+      const text = normalize(headerText);
+      const icon = (name, cls) => `<i data-lucide="${name}" class="${cls}" style="width:15px;height:15px;" stroke-width="2.6"></i>`;
+      if (text.includes('carrera') || text.includes('curso') || text.includes('diplomatura')) return icon('graduation-cap', 'text-violet-500');
+      if (text.includes('modalidad')) return icon('monitor', 'text-emerald-500');
+      if (text.includes('inicio') || text.includes('fecha') || text.includes('dia')) return icon('calendar', 'text-blue-500');
+      if (text.includes('horario') || text.includes('hora')) return icon('clock', 'text-orange-500');
+      if (text.includes('duraci')) return icon('timer', 'text-rose-500');
+      if (text.includes('docente')) return icon('user', 'text-violet-500');
+      if (text.includes('precio') || text.includes('cuota') || text.includes('matricula') || text.includes('$') || text.includes('empresa') || text.includes('pago')) return icon('dollar-sign', 'text-emerald-500');
+      if (text.includes('pdf') || text.includes('plan')) return icon('file-text', 'text-rose-500');
+      return icon('check-circle', 'text-slate-400');
+    }
 
-        async function fetchCSVWithFallback(type) {
-            const urls = buildFetchUrls(type);
-            let lastError = null;
+    function isCenterAligned(header) {
+      const h = normalize(header);
+      return h.includes('precio') || h.includes('cuota') || h.includes('matricula') || h.includes('$') || h.includes('empresa') || h.includes('pago') || h.includes('pdf');
+    }
 
-            for (const url of urls) {
-                try {
-                    const response = await fetch(url, { cache: 'no-store' });
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    const text = await response.text();
-                    if (!text || !text.trim()) throw new Error('Respuesta vacía');
-                    if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) throw new Error('La respuesta no es CSV');
-                    return text;
-                } catch (err) {
-                    lastError = err;
-                }
-            }
+    function formatMoney(text) {
+      const original = String(text || '').trim();
+      if (!original) return '';
+      if (/https?:\/\//i.test(original)) return original;
+      const numeric = original.replace(/[^\d]/g, '');
+      if (!numeric) return original;
+      return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(Number(numeric));
+    }
 
-            throw new Error(`No se pudo conectar con Google Sheets. Detalle: ${lastError ? lastError.message : 'fetch bloqueado'}`);
-        }
+    function renderCell(content, header) {
+      const h = normalize(header);
+      const text = String(content || '').trim();
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
 
-        async function fetchData() {
-            if (state.activeTab !== 'cursos' && state.activeTab !== 'carreras') return;
-            state.loading = true; state.error = null;
-            renderDataContainer();
-            
-            try {
-                const text = await fetchCSVWithFallback(state.activeTab);
-                const parsedData = parseCSV(text);
-                
-                if (parsedData.length > 0) {
-                    state.headers = parsedData[0];
-                    state.rows = parsedData.slice(1);
-                } else {
-                    throw new Error('El documento está vacío.');
-                }
-            } catch (err) {
-                state.error = err.message || 'Failed to fetch';
-            } finally {
-                state.loading = false;
-                renderDataContainer();
-            }
-        }
+      if (h.includes('modalidad')) {
+        return `<span class="modality-pill">${escapeHTML(text)}</span>`;
+      }
 
-        // --- 4. AYUDANTES DE RENDERIZADO ---
-        function getHeaderIcon(headerText) {
-            const text = headerText.toLowerCase();
-            const wrapper = (iconStr, colorClass) => `<div class="flex-shrink-0 w-4 h-4 flex items-center justify-center"><i data-lucide="${iconStr}" class="${colorClass} w-4 h-4" stroke-width="2.5"></i></div>`;
-            
-            if (text.includes('carrera') || text.includes('diplomatura') || text.includes('curso')) return wrapper('graduation-cap', 'text-violet-500');
-            if (text.includes('modalidad')) return wrapper('monitor', 'text-emerald-500');
-            if (text.includes('inicio') || text.includes('fecha')) return wrapper('calendar', 'text-blue-500');
-            if (text.includes('día') || text.includes('horario')) return wrapper('clock', 'text-orange-500');
-            if (text.includes('duraci')) return wrapper('timer', 'text-rose-500');
-            if (text.includes('docente')) return wrapper('user', 'text-violet-500');
-            if (text.includes('precio') || text.includes('$') || text.includes('cuota') || text.includes('matrícula') || text.includes('arancel')) return wrapper('dollar-sign', 'text-emerald-500');
-            if (text.includes('pdf') || text.includes('plan')) return wrapper('file-text', 'text-rose-500');
-            return wrapper('check-circle', 'text-slate-400');
-        }
+      if (urlRegex.test(text)) {
+        const url = text.match(urlRegex)[0];
+        const isPDF = h.includes('pdf') || h.includes('plan') || url.toLowerCase().includes('drive.google') || url.toLowerCase().endsWith('.pdf');
+        return `<a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" class="${isPDF ? 'pdf-btn' : 'link-btn'}">${getHeaderIcon(isPDF ? 'pdf' : 'link')} ${isPDF ? 'Ver PDF' : 'Abrir link'}</a>`;
+      }
 
-        function isCenterAligned(headerText) {
-            const h = headerText.toLowerCase();
-            return h.includes('precio') || h.includes('alumnos') || h.includes('empresas') || h.includes('pdf') || h.includes('$') || h.includes('cuota') || h.includes('matrícula');
-        }
+      if (isCenterAligned(header) && text) return `<span class="price">${escapeHTML(formatMoney(text))}</span>`;
+      return `<span class="normal-text">${escapeHTML(text)}</span>`;
+    }
 
-        function renderCellHTML(content, headerName) {
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
-            const isPriceCol = isCenterAligned(headerName) && !headerName.toLowerCase().includes('pdf');
-            const alignClass = isPriceCol || headerName.toLowerCase().includes('pdf') ? "md:items-center md:text-center items-end text-right" : "md:items-start md:text-left items-end text-right";
-            
-            if (headerName.toLowerCase().includes('modalidad')) {
-                return `<span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 tracking-wide border border-slate-200/60 whitespace-nowrap">${content}</span>`;
-            }
-            
-            if (urlRegex.test(content) || isPriceCol) {
-                const parts = content.split(urlRegex);
-                let html = `<div class="flex flex-col gap-2 w-full ${alignClass}">`;
-                
-                parts.forEach(part => {
-                    if (part.match(urlRegex)) {
-                        const isPDF = headerName.toLowerCase().includes('pdf') || part.toLowerCase().includes('drive.google') || part.toLowerCase().endsWith('.pdf');
-                        if (isPDF) {
-                            html += `
-                            <a href="${part}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 mt-1 bg-white hover:bg-rose-50 text-rose-600 text-xs font-bold rounded-full transition-all duration-200 border border-rose-200 shadow-sm hover:shadow whitespace-nowrap w-fit">
-                                <i data-lucide="file-text" class="w-3.5 h-3.5" stroke-width="2.5"></i> Ver PDF
-                            </a>`;
-                        } else {
-                            html += `
-                            <a href="${part}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 mt-1 bg-[#009EE3] hover:bg-[#008ACA] text-white text-xs font-bold rounded-full transition-all duration-300 shadow-[0_4px_14px_0_rgba(0,158,227,0.39)] hover:shadow-[0_6px_20px_rgba(0,158,227,0.23)] hover:-translate-y-0.5 whitespace-nowrap group w-fit">
-                                <div class="bg-white/20 p-1 rounded-full"><i data-lucide="external-link" class="w-3 h-3 group-hover:scale-110 transition-transform" stroke-width="2.5"></i></div>
-                                Link de pago
-                            </a>`;
-                        }
-                    } else if (part.trim() !== '') {
-                        let displayText = part.trim();
-                        if (isPriceCol) {
-                            const numericString = displayText.replace(/[^\d]/g, '');
-                            if (numericString.length > 0) {
-                                displayText = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(parseInt(numericString, 10));
-                            }
-                        }
-                        html += `<span class="whitespace-pre-line font-bold text-slate-800 text-[14px] md:text-[15px] tracking-tight">${displayText}</span>`;
-                    }
-                });
-                html += `</div>`;
-                return html;
-            }
-            
-            return `<div class="flex flex-col w-full ${alignClass}"><span class="whitespace-pre-line text-[13px] md:text-[14px] text-slate-600 font-medium leading-relaxed">${content}</span></div>`;
-        }
+    function escapeHTML(str) {
+      return String(str || '').replace(/[&<>'"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[s]));
+    }
 
-        // --- 5. FUNCIONES DE ACTUALIZACIÓN DOM ---
-        function switchTab(tabId) {
-            state.activeTab = tabId;
-            state.searchTerm = '';
-            renderApp();
-            if (tabId === 'cursos' || tabId === 'carreras') {
-                fetchData();
-            }
-        }
+    function escapeAttr(str) { return escapeHTML(str); }
 
-        window.setGadgetType = function(type) {
-            state.gadgetType = type;
-            renderTabContent();
-        }
+    function visibleColumnIndexes() {
+      return state.headers.map((h, i) => ({ h, i })).filter(({ h, i }) => !isHiddenColumn(h, i)).map(({ i }) => i);
+    }
 
-        window.copyEmbedCode = function() {
-            const currentUrl = window.location.href.split('?')[0];
-            const iframeCode = `<iframe src="${currentUrl}?embed=true&type=${state.gadgetType}" width="100%" height="800" frameborder="0" style="width:100%; border:0; background:transparent;"></iframe>`;
-            navigator.clipboard.writeText(iframeCode);
-            state.copied = true;
-            renderTabContent();
-            setTimeout(() => { state.copied = false; renderTabContent(); }, 2000);
-        }
+    function renderTable() {
+      const term = normalize(state.searchTerm);
+      const rows = state.rows.filter(row => !term || row.some(cell => normalize(cell).includes(term)));
+      const indexes = visibleColumnIndexes();
 
-        // --- 6. PLANTILLAS DE RENDERIZADO ---
-        function renderApp() {
-            const root = document.getElementById('app-root');
-            let html = '';
-            
-            if (!state.isEmbed) {
-                const baseName = (state.activeTab === 'cursos' || state.activeTab === 'carreras') ? (state.activeTab.charAt(0).toUpperCase() + state.activeTab.slice(1)) : '';
-                const activeBtnClass = "bg-white text-slate-900 shadow-[0_2px_10px_rgb(0,0,0,0.06)]";
-                const inactiveBtnClass = "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50";
-                
-                html += `
-                <header class="bg-white/70 backdrop-blur-xl border border-slate-200/60 px-5 md:px-8 py-5 flex flex-col xl:flex-row justify-between items-center shadow-[0_8px_30px_rgb(0,0,0,0.04)] z-20 sticky top-4 rounded-3xl mb-6 mx-auto w-full max-w-[1800px] mt-4 sm:mt-6">
-                    <div class="flex items-center gap-4 mb-5 xl:mb-0 w-full xl:w-auto">
-                        <div class="bg-slate-900 text-white p-3.5 rounded-2xl shadow-md hidden sm:block">
-                            <i data-lucide="layout-grid" class="w-5 h-5" stroke-width="2.5"></i>
-                        </div>
-                        <div>
-                            <h1 class="text-xl md:text-2xl font-black text-slate-900 tracking-tight">Gestor de Contenidos</h1>
-                            <p class="text-xs md:text-sm font-semibold text-slate-500 flex items-center gap-2 mt-1">
-                                <span class="relative flex h-2.5 w-2.5">
-                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                                </span>
-                                ${baseName ? `Base activa: <span class="text-slate-800">${baseName}</span>` : 'Modo de Configuración'}
-                            </p>
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap justify-center bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/60 shadow-inner w-full xl:w-auto">
-                        <button onclick="switchTab('cursos')" class="flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-[13px] md:text-sm font-bold transition-all duration-300 flex-1 xl:flex-none ${state.activeTab === 'cursos' ? activeBtnClass : inactiveBtnClass}">
-                            <i data-lucide="book-open" class="w-4 h-4" stroke-width="2.5"></i> <span class="hidden sm:inline">Cursos</span>
-                        </button>
-                        <button onclick="switchTab('carreras')" class="flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-[13px] md:text-sm font-bold transition-all duration-300 flex-1 xl:flex-none ${state.activeTab === 'carreras' ? activeBtnClass : inactiveBtnClass}">
-                            <i data-lucide="graduation-cap" class="w-4 h-4" stroke-width="2.5"></i> <span class="hidden sm:inline">Carreras</span>
-                        </button>
-                        <div class="w-px bg-slate-300 mx-1 hidden sm:block"></div>
-                        <button onclick="switchTab('gadget')" class="flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-[13px] md:text-sm font-bold transition-all duration-300 flex-1 xl:flex-none ${state.activeTab === 'gadget' ? 'bg-white text-violet-600 shadow-[0_2px_10px_rgb(0,0,0,0.06)]' : inactiveBtnClass}">
-                            <i data-lucide="code" class="w-4 h-4" stroke-width="2.5"></i> <span class="hidden sm:inline">Gadget</span>
-                        </button>
-                    </div>
-                </header>`;
-            }
+      if (!rows.length) {
+        return `<div class="status-box"><i data-lucide="search" style="width:42px;height:42px;color:#cbd5e1"></i><h3 class="mt-4 text-xl font-black text-slate-700">No se encontraron resultados</h3></div>`;
+      }
 
-            html += `<main class="flex-1 w-full ${state.isEmbed ? 'max-w-none p-0' : 'max-w-[1800px] mx-auto'}" id="tab-content"></main>`;
-            root.innerHTML = html;
-            renderTabContent();
-        }
+      let html = `<table class="ccap-table"><thead><tr>`;
+      indexes.forEach((idx) => {
+        const header = state.headers[idx] || '';
+        html += `<th class="${isCenterAligned(header) ? 'center-col' : ''}"><div class="header-with-icon ${isCenterAligned(header) ? 'justify-center' : ''}">${getHeaderIcon(header)}<span>${escapeHTML(header)}</span></div></th>`;
+      });
+      html += `</tr></thead><tbody>`;
 
-        function renderTabContent() {
-            const main = document.getElementById('tab-content');
-            
-            if (state.activeTab === 'cursos' || state.activeTab === 'carreras') {
-                main.innerHTML = `
-                <div class="space-y-4 md:space-y-6 animate-fade-in pb-12">
-                    <div class="flex flex-col sm:flex-row justify-between items-center bg-white/60 backdrop-blur-2xl p-2.5 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 gap-3 ${state.isEmbed ? 'sticky top-2 z-10' : ''}">
-                        <div class="relative w-full sm:w-[400px]">
-                            <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" stroke-width="2.5"></i>
-                            <input type="text" id="search-input" placeholder="Buscar en ${state.activeTab}..." value="${state.searchTerm}"
-                                class="pl-12 pr-4 py-3.5 bg-white/50 border border-slate-200/50 rounded-2xl text-[14px] w-full focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all font-semibold text-slate-800 placeholder-slate-400 shadow-inner" />
-                        </div>
-                        <button id="btn-refresh" class="flex items-center gap-2 px-6 py-3.5 bg-slate-900 text-white hover:bg-slate-800 hover:-translate-y-0.5 active:translate-y-0 rounded-2xl text-[14px] font-bold transition-all shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] w-full sm:w-auto justify-center">
-                            <i data-lucide="refresh-cw" class="w-4 h-4 ${state.loading ? 'animate-spin' : ''}" stroke-width="2.5"></i> Actualizar
-                        </button>
-                    </div>
-                    <div id="data-container"></div>
-                </div>`;
+      rows.forEach((row, rowIndex) => {
+        const firstParsed = parseFirstCell(row[0]);
+        const color = getRowColor(row, rowIndex, firstParsed);
+        const contrast = getContrastColor(color);
+        const has2x1 = rowHas2x1(row);
+        const planIndex = headerIndexIncludes(['plan']);
+        const planText = planIndex !== -1 ? String(row[planIndex] || '').trim() : '';
 
-                document.getElementById('search-input').addEventListener('input', (e) => {
-                    state.searchTerm = e.target.value;
-                    renderDataContainer();
-                });
-                document.getElementById('btn-refresh').addEventListener('click', fetchData);
-                renderDataContainer();
-                
-            } else if (state.activeTab === 'gadget') {
-                const currentUrl = window.location.href.split('?')[0];
-                const iframeStr = `&lt;iframe \n  src="TU_ENLACE_AQUI?embed=true&type=${state.gadgetType}" \n  width="100%" \n  height="800" \n  frameborder="0" \n  style="width:100%; border:0; background:transparent;"&gt;\n&lt;/iframe&gt;`;
-                
-                main.innerHTML = `
-                <div class="max-w-4xl mx-auto space-y-6 mt-6 animate-fade-in pb-12">
-                    <div class="bg-amber-50/80 backdrop-blur-sm border border-amber-200 p-8 rounded-3xl shadow-sm flex flex-col sm:flex-row gap-5 items-start">
-                        <div class="bg-amber-100 p-3 rounded-2xl flex-shrink-0"><i data-lucide="alert-triangle" class="text-amber-600 w-7 h-7" stroke-width="2.5"></i></div>
-                        <div>
-                            <h3 class="font-black text-amber-900 text-xl tracking-tight">Paso final para tu Web</h3>
-                            <p class="text-amber-800/90 mt-2 font-medium leading-relaxed">Para que este componente funcione en tu plataforma, copia el código de abajo y reemplaza <code class="bg-white/60 px-2 py-0.5 rounded-md font-bold border border-amber-200 shadow-sm text-amber-900">TU_ENLACE_AQUI</code> por el link real donde hospedes este archivo <strong>index.html</strong> (ej. en Vercel, Netlify o tu propio servidor).</p>
-                        </div>
-                    </div>
+        html += `<tr class="ccap-row">`;
+        indexes.forEach((idx) => {
+          const header = state.headers[idx] || '';
+          if (idx === 0) {
+            html += `<td style="background:${escapeAttr(color)}; color:${contrast};">
+              <div class="first-cell">
+                <div class="career-title" style="color:${contrast};">
+                  <span>${escapeHTML(firstParsed.name)}</span>
+                  ${has2x1 ? '<span class="badge-2x1">2x1</span>' : ''}
+                </div>
+                ${planText && !/\b2\s*x\s*1\b/i.test(planText) ? `<span class="plan-badge" style="color:${contrast};">${escapeHTML(planText)}</span>` : ''}
+              </div>
+            </td>`;
+          } else if (idx === planIndex) {
+            // No mostramos plan como columna si ya se usa debajo del nombre.
+          } else {
+            html += `<td class="mobile-cell ${isCenterAligned(header) ? 'center-col' : ''}">
+              <span class="mobile-label">${getHeaderIcon(header)} ${escapeHTML(header)}</span>
+              <div class="cell-content">${renderCell(row[idx], header)}</div>
+            </td>`;
+          }
+        });
+        html += `</tr>`;
+      });
 
-                    <div class="bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 overflow-hidden">
-                        <div class="bg-slate-900 px-10 py-10 text-white relative overflow-hidden">
-                            <div class="absolute top-0 right-0 w-80 h-80 bg-violet-500/30 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3"></div>
-                            <h2 class="text-3xl md:text-4xl font-black flex items-center gap-4 relative z-10 tracking-tight">
-                                <div class="bg-white/10 p-2.5 rounded-2xl backdrop-blur-md border border-white/10"><i data-lucide="code" class="text-violet-300 w-7 h-7" stroke-width="2.5"></i></div> Generador de Gadget
-                            </h2>
-                        </div>
-                        <div class="p-8 md:p-10">
-                            <div class="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between bg-slate-50/80 p-5 rounded-2xl border border-slate-200/60">
-                                <label class="font-bold text-slate-800 mb-3 sm:mb-0 text-lg">Selecciona la base a mostrar:</label>
-                                <div class="flex bg-white rounded-xl p-1.5 border border-slate-200 shadow-sm w-full sm:w-auto">
-                                    <button onclick="setGadgetType('cursos')" class="flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${state.gadgetType === 'cursos' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}">Cursos</button>
-                                    <button onclick="setGadgetType('carreras')" class="flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${state.gadgetType === 'carreras' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}">Carreras</button>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-slate-900 rounded-3xl p-6 md:p-8 relative group shadow-2xl overflow-hidden">
-                                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 via-blue-500 to-emerald-500"></div>
-                                <div class="absolute top-5 right-5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onclick="copyEmbedCode()" class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all shadow-lg hover:-translate-y-0.5 ${state.copied ? 'bg-emerald-500 shadow-emerald-500/25' : 'bg-white/20 hover:bg-white/30 backdrop-blur-md'}">
-                                        <i data-lucide="${state.copied ? 'check' : 'copy'}" class="w-4 h-4" stroke-width="${state.copied ? '3' : '2.5'}"></i>
-                                        ${state.copied ? '¡Copiado!' : 'Copiar código HTML'}
-                                    </button>
-                                </div>
-                                <pre class="text-[13px] md:text-[14px] font-mono text-blue-300 overflow-x-auto whitespace-pre-wrap leading-relaxed mt-2 pb-4 custom-scrollbar">${iframeStr}</pre>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-            }
-            lucide.createIcons();
-        }
+      html += `</tbody></table>`;
+      return html;
+    }
 
-        function renderDataContainer() {
-            const container = document.getElementById('data-container');
-            if (state.loading) {
-                container.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-40 bg-white/40 backdrop-blur-sm rounded-3xl border border-slate-200/50">
-                    <i data-lucide="refresh-cw" class="animate-spin text-slate-800 mb-5 w-10 h-10"></i>
-                    <p class="text-lg font-bold text-slate-800 tracking-tight">Sincronizando datos...</p>
-                </div>`;
-            } else if (state.error) {
-                container.innerHTML = `
-                <div class="bg-rose-50/80 backdrop-blur-md border border-rose-200 p-10 rounded-3xl flex flex-col items-center justify-center text-center max-w-2xl mx-auto mt-10 shadow-sm">
-                    <i data-lucide="alert-triangle" class="mb-5 text-rose-500 w-12 h-12" stroke-width="2"></i>
-                    <h3 class="text-2xl font-black mb-2 text-rose-900 tracking-tight">Problema de conexión</h3>
-                    <p class="font-medium text-rose-700/80 text-lg">${state.error}</p>
-                    <button onclick="fetchData()" class="mt-8 px-8 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">Reintentar conexión</button>
-                </div>`;
-            } else {
-                const term = state.searchTerm.toLowerCase();
-                const filteredRows = state.rows.filter(row => row.some(cell => cell && cell.toLowerCase().includes(term)));
-                const planIndex = state.headers.findIndex(h => h.toLowerCase().includes('plan'));
-                const hiddenIndexes = state.headers
-                    .map((header, index) => shouldHideColumn(header) ? index : -1)
-                    .filter(index => index !== -1);
-                
-                let html = `<div class="w-full"><table class="w-full text-sm text-left border-separate md:border-spacing-y-4 block md:table">`;
-                
-                // --- Encabezados ---
-                html += `<thead class="hidden md:table-header-group"><tr>`;
-                state.headers.forEach((header, index) => {
-                    if (hiddenIndexes.includes(index)) return;
-                    const widthClass = index === 0 ? 'w-[25%]' : '';
-                    const alignClass = isCenterAligned(header) ? 'justify-center' : '';
-                    html += `
-                    <th class="px-6 py-2 font-bold text-slate-400 uppercase tracking-widest text-[10px] ${isCenterAligned(header) ? 'text-center' : 'text-left'} ${widthClass}">
-                        <div class="flex items-center gap-2.5 ${alignClass}">
-                            ${getHeaderIcon(header)} ${header}
-                        </div>
-                    </th>`;
-                });
-                html += `</tr></thead>`;
+    function renderControls() {
+      if (isEmbed) return '';
+      return `<div class="controls">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="tab-btn ${state.activeTab === 'cursos' ? 'active' : ''}" onclick="switchType('cursos')">Cursos</button>
+          <button class="tab-btn ${state.activeTab === 'carreras' ? 'active' : ''}" onclick="switchType('carreras')">Carreras</button>
+        </div>
+        <input id="search" type="text" placeholder="Buscar en ${state.activeTab}..." value="${escapeAttr(state.searchTerm)}" />
+      </div>`;
+    }
 
-                // --- Cuerpo ---
-                html += `<tbody class="block md:table-row-group pb-10">`;
-                
-                if (filteredRows.length > 0) {
-                    filteredRows.forEach((row, rowIndex) => {
-                        const nameContent = row[0] || "";
-                        const rowStyle = getRowStyle(state.activeTab, nameContent, rowIndex, row);
-                        
-                        // Lógica 2x1: Si cualquier celda de esta fila contiene "2x1"
-                        const is2x1 = row.some(cell => cell && cell.toLowerCase().includes('2x1'));
-                        
-                        html += `<tr class="flex flex-col md:table-row bg-white shadow-[0_2px_12px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:border-slate-300/80 transition-all duration-300 group rounded-3xl relative mb-5 md:mb-0 border border-slate-200/60 overflow-hidden">`;
-                        
-                        state.headers.forEach((headerName, cellIndex) => {
-                            if (hiddenIndexes.includes(cellIndex)) return;
-                            const cellContent = row[cellIndex] || "";
-                            
-                            // Primera columna (Fondo Pintado + Texto dinámico + Plan + 2x1)
-                            if (cellIndex === 0) {
-                                let displayName = cleanDisplayName(cellContent);
-                                
-                                const planValue = (planIndex !== -1 && row[planIndex]) ? row[planIndex].trim() : null;
-                                
-                                const badgeClass = rowStyle.text.includes('white') ? 'bg-white/25 text-white' : 'bg-black/10 text-[#4A4A4A]';
-                                const planBadge = planValue ? `<span class="inline-flex items-center mt-2 md:mt-0 px-2.5 py-0.5 ${badgeClass} text-[11px] font-bold rounded-md tracking-wide uppercase">(${planValue})</span>` : '';
-                                const badge2x1 = is2x1 ? `<span class="inline-flex items-center mt-2 md:mt-0 px-3 py-1 bg-gradient-to-r from-red-600 to-rose-500 text-white text-[11px] font-black rounded-full shadow-md uppercase tracking-widest border-2 border-white/70">2x1</span>` : '';
-                                
-                                html += `
-                                <td style="background-color: ${rowStyle.bg};" class="p-0 border-b border-slate-100 md:border-b-0 relative block md:table-cell md:rounded-l-3xl rounded-t-3xl md:rounded-tr-none">
-                                    <div class="pl-7 pr-5 py-5 flex flex-col justify-center h-full">
-                                        <div class="font-bold ${rowStyle.text} text-[16px] md:text-[15px] leading-snug tracking-tight flex flex-wrap items-center gap-1.5">
-                                            ${displayName} ${planBadge} ${badge2x1}
-                                        </div>
-                                    </div>
-                                </td>`;
-                            } else {
-                                // Resto de columnas
-                                const isPriceCol = headerName.toLowerCase().includes('precio') || headerName.toLowerCase().includes('alumnos') || headerName.toLowerCase().includes('empresas') || headerName.toLowerCase().includes('cuota') || headerName.toLowerCase().includes('matrícula');
-                                const bgClass = isPriceCol ? 'md:bg-slate-50/40 bg-slate-50/20' : '';
-                                
-                                html += `
-                                <td class="px-5 py-4 align-middle border-b md:border-b-0 border-slate-50 last:border-b-0 flex justify-between items-center md:table-cell ${bgClass}">
-                                    <span class="md:hidden font-bold text-slate-400 text-[11px] uppercase tracking-widest w-[40%] flex items-center gap-2">
-                                        ${getHeaderIcon(headerName)} ${headerName}
-                                    </span>
-                                    <div class="w-[60%] flex flex-col items-end md:items-start md:block md:w-auto">
-                                        ${renderCellHTML(cellContent, headerName)}
-                                    </div>
-                                </td>`;
-                            }
-                        });
-                        html += `</tr>`;
-                    });
-                } else {
-                    html += `
-                    <tr class="block md:table-row">
-                        <td colspan="${state.headers.length}" class="block md:table-cell px-4 py-24 text-center bg-white/50 backdrop-blur-sm rounded-3xl border border-slate-200/50">
-                            <div class="flex flex-col items-center justify-center text-slate-300">
-                                <i data-lucide="search" class="mb-5 text-slate-200 w-12 h-12" stroke-width="1.5"></i>
-                                <p class="text-xl font-bold text-slate-500 tracking-tight">No se encontró "${state.searchTerm}"</p>
-                            </div>
-                        </td>
-                    </tr>`;
-                }
-                
-                html += `</tbody></table></div>`;
-                container.innerHTML = html;
-            }
-            lucide.createIcons();
-        }
+    function render() {
+      const app = document.getElementById('app');
+      let html = renderControls();
+      if (state.loading) {
+        html += `<div class="status-box"><i data-lucide="refresh-cw" class="animate-spin" style="width:42px;height:42px;color:#0f172a"></i><h3 class="mt-4 text-xl font-black text-slate-800">Sincronizando datos...</h3></div>`;
+      } else if (state.error) {
+        html += `<div class="status-box error-box"><i data-lucide="alert-triangle" style="width:42px;height:42px;color:#f43f5e"></i><h3 class="mt-4 text-xl font-black">Problema de conexión</h3><p class="mt-2 font-bold">${escapeHTML(state.error)}</p><button class="tab-btn active mt-5" onclick="fetchData()">Reintentar conexión</button></div>`;
+      } else {
+        html += renderTable();
+      }
+      app.innerHTML = html;
 
-        // --- ARRANQUE ---
-        window.onload = init;
-    </script>
+      if (!isEmbed) {
+        const search = document.getElementById('search');
+        if (search) search.addEventListener('input', e => { state.searchTerm = e.target.value; render(); });
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    window.switchType = function(type) {
+      state.activeTab = type === 'carreras' ? 'carreras' : 'cursos';
+      state.searchTerm = '';
+      fetchData();
+    };
+
+    window.addEventListener('load', fetchData);
+  </script>
 </body>
 </html>
