@@ -20,7 +20,7 @@
     .ccap-row { background: #fff; box-shadow: 0 3px 18px rgba(15, 23, 42, .045); transition: box-shadow .2s ease, transform .2s ease; }
     .ccap-row:hover { box-shadow: 0 8px 28px rgba(15, 23, 42, .08); }
     .ccap-row td { padding: 18px 20px; vertical-align: middle; border-top: 1px solid rgba(226,232,240,.65); border-bottom: 1px solid rgba(226,232,240,.65); }
-    .ccap-row td:first-child { border-left: 1px solid rgba(226,232,240,.65); border-radius: 22px 0 0 22px; width: 280px; min-width: 240px; }
+    .ccap-row td:first-child { border-left: 1px solid rgba(226,232,240,.65); border-radius: 22px 0 0 22px; width: 320px; min-width: 260px; }
     .ccap-row td:last-child { border-right: 1px solid rgba(226,232,240,.65); border-radius: 0 22px 22px 0; }
     .first-cell { min-height: 58px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
     .career-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 15px; line-height: 1.22; font-weight: 850; letter-spacing: -.015em; }
@@ -44,6 +44,21 @@
     .center-col { text-align: center; }
     .center-col .cell-content { display: flex; justify-content: center; }
     .cell-content { width: 100%; }
+
+    .top-tabs { display:flex; gap:8px; flex-wrap:wrap; }
+    .widget-panel { max-width: 960px; margin: 18px auto 0; background: #fff; border: 1px solid #e2e8f0; border-radius: 28px; overflow: hidden; box-shadow: 0 8px 30px rgba(15,23,42,.06); }
+    .widget-head { padding: 28px 30px; background: #0f172a; color:#fff; }
+    .widget-head h2 { margin:0; font-size: 26px; font-weight: 950; letter-spacing: -.03em; }
+    .widget-body { padding: 26px 30px 30px; }
+    .widget-selector { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; padding:14px; border-radius:20px; background:#f8fafc; border:1px solid #e2e8f0; margin-bottom:18px; }
+    .widget-code { position:relative; background:#020617; border-radius:22px; padding:22px; overflow:auto; color:#93c5fd; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+    .copy-widget-btn { margin-top:14px; border:0; cursor:pointer; border-radius:16px; background:#0f172a; color:white; padding:12px 18px; font-weight:950; }
+    .payment-link-box { position: relative; display: inline-flex; flex-direction: column; align-items: center; gap: 7px; width: fit-content; }
+    .payment-price { font-size: 14px; font-weight: 950; color:#061d36; white-space: pre-line; text-align:center; }
+    .payment-actions { position: absolute; z-index: 50; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); min-width: 155px; background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 16px 38px rgba(15,23,42,.18); padding:7px; display:none; }
+    .payment-actions.open { display:block; }
+    .payment-actions a, .payment-actions button { width:100%; display:flex; align-items:center; justify-content:center; gap:7px; border:0; background:transparent; color:#0f2742; text-decoration:none; padding:10px 12px; border-radius:12px; font-size:12px; font-weight:950; cursor:pointer; }
+    .payment-actions a:hover, .payment-actions button:hover { background:#f1f5f9; }
     @media (max-width: 900px) {
       .ccap-wrap { padding: 8px; }
       .controls { flex-direction: column; align-items: stretch; }
@@ -80,12 +95,16 @@
 
     const state = {
       activeTab: initialType,
+      widgetType: initialType,
       headers: [],
       rows: [],
       loading: true,
       error: null,
-      searchTerm: ''
+      searchTerm: '',
+      copied: false
     };
+
+    let linkCounter = 0;
 
     if (isEmbed) document.body.classList.add('embed');
 
@@ -127,6 +146,7 @@
     }
 
     async function fetchData() {
+      if (state.activeTab === 'widget') { render(); return; }
       state.loading = true;
       state.error = null;
       render();
@@ -250,7 +270,22 @@
       if (urlRegex.test(text)) {
         const url = text.match(urlRegex)[0];
         const isPDF = h.includes('pdf') || h.includes('plan') || url.toLowerCase().includes('drive.google') || url.toLowerCase().endsWith('.pdf');
-        return `<a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" class="${isPDF ? 'pdf-btn' : 'link-btn'}">${getHeaderIcon(isPDF ? 'pdf' : 'link')} ${isPDF ? 'Ver PDF' : 'Abrir link'}</a>`;
+        const labelText = text.replace(urlRegex, '').replace(/\s+/g, ' ').trim();
+        if (isPDF) {
+          return `<a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" class="pdf-btn">${getHeaderIcon('pdf')} Ver PDF</a>`;
+        }
+        if (state.activeTab === 'cursos') {
+          const id = 'pay-menu-' + (++linkCounter);
+          return `<div class="payment-link-box">
+            ${labelText ? `<span class="payment-price">${escapeHTML(labelText)}</span>` : ''}
+            <button type="button" class="link-btn" onclick="togglePaymentMenu('${id}')">${getHeaderIcon('link')} Ver link de pago</button>
+            <div id="${id}" class="payment-actions">
+              <a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer">Ver</a>
+              <button type="button" onclick="copyPaymentLink('${escapeAttr(url)}')">Copiar</button>
+            </div>
+          </div>`;
+        }
+        return `<a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer" class="link-btn">${getHeaderIcon('link')} Ver link</a>`;
       }
 
       if (isCenterAligned(header) && text) return `<span class="price">${escapeHTML(formatMoney(text))}</span>`;
@@ -263,38 +298,62 @@
 
     function escapeAttr(str) { return escapeHTML(str); }
 
+    function getPrimaryIndex() {
+      // En Carreras priorizamos la columna Carrera; en Cursos, Curso/Diplomatura.
+      const preferred = state.activeTab === 'carreras'
+        ? ['carrera']
+        : ['curso', 'diplomatura', 'carrera'];
+
+      for (const word of preferred) {
+        const idx = headerIndexIncludes([word]);
+        if (idx !== -1) return idx;
+      }
+
+      // Fallback: primera columna visible no auxiliar.
+      const firstVisible = state.headers.findIndex((h, i) => !isHiddenColumn(h, i) && !normalize(h).includes('plan'));
+      return firstVisible !== -1 ? firstVisible : 0;
+    }
+
     function visibleColumnIndexes() {
-      return state.headers.map((h, i) => ({ h, i })).filter(({ h, i }) => !isHiddenColumn(h, i)).map(({ i }) => i);
+      const primaryIndex = getPrimaryIndex();
+      const planIndex = headerIndexIncludes(['plan']);
+      const rest = state.headers
+        .map((h, i) => ({ h, i }))
+        .filter(({ h, i }) => i !== primaryIndex && i !== planIndex && !isHiddenColumn(h, i))
+        .map(({ i }) => i);
+      return [primaryIndex, ...rest];
     }
 
     function renderTable() {
+      linkCounter = 0;
       const term = normalize(state.searchTerm);
       const rows = state.rows.filter(row => !term || row.some(cell => normalize(cell).includes(term)));
       const indexes = visibleColumnIndexes();
+      const primaryIndex = indexes[0];
+      const planIndex = headerIndexIncludes(['plan']);
 
       if (!rows.length) {
         return `<div class="status-box"><i data-lucide="search" style="width:42px;height:42px;color:#cbd5e1"></i><h3 class="mt-4 text-xl font-black text-slate-700">No se encontraron resultados</h3></div>`;
       }
 
       let html = `<table class="ccap-table"><thead><tr>`;
-      indexes.forEach((idx) => {
+      indexes.forEach((idx, orderIndex) => {
         const header = state.headers[idx] || '';
         html += `<th class="${isCenterAligned(header) ? 'center-col' : ''}"><div class="header-with-icon ${isCenterAligned(header) ? 'justify-center' : ''}">${getHeaderIcon(header)}<span>${escapeHTML(header)}</span></div></th>`;
       });
       html += `</tr></thead><tbody>`;
 
       rows.forEach((row, rowIndex) => {
-        const firstParsed = parseFirstCell(row[0]);
+        const firstParsed = parseFirstCell(row[primaryIndex]);
         const color = getRowColor(row, rowIndex, firstParsed);
-        const contrast = getContrastColor(color);
+        const contrast = '#ffffff';
         const has2x1 = rowHas2x1(row);
-        const planIndex = headerIndexIncludes(['plan']);
         const planText = planIndex !== -1 ? String(row[planIndex] || '').trim() : '';
 
         html += `<tr class="ccap-row">`;
         indexes.forEach((idx) => {
           const header = state.headers[idx] || '';
-          if (idx === 0) {
+          if (idx === primaryIndex) {
             html += `<td style="background:${escapeAttr(color)}; color:${contrast};">
               <div class="first-cell">
                 <div class="career-title" style="color:${contrast};">
@@ -304,8 +363,6 @@
                 ${planText && !/\b2\s*x\s*1\b/i.test(planText) ? `<span class="plan-badge" style="color:${contrast};">${escapeHTML(planText)}</span>` : ''}
               </div>
             </td>`;
-          } else if (idx === planIndex) {
-            // No mostramos plan como columna si ya se usa debajo del nombre.
           } else {
             html += `<td class="mobile-cell ${isCenterAligned(header) ? 'center-col' : ''}">
               <span class="mobile-label">${getHeaderIcon(header)} ${escapeHTML(header)}</span>
@@ -322,19 +379,42 @@
 
     function renderControls() {
       if (isEmbed) return '';
+      const searchBox = state.activeTab === 'widget' ? '' : `<input id="search" type="text" placeholder="Buscar en ${state.activeTab}..." value="${escapeAttr(state.searchTerm)}" />`;
       return `<div class="controls">
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <div class="top-tabs">
           <button class="tab-btn ${state.activeTab === 'cursos' ? 'active' : ''}" onclick="switchType('cursos')">Cursos</button>
           <button class="tab-btn ${state.activeTab === 'carreras' ? 'active' : ''}" onclick="switchType('carreras')">Carreras</button>
+          <button class="tab-btn ${state.activeTab === 'widget' ? 'active' : ''}" onclick="switchType('widget')">Widget</button>
         </div>
-        <input id="search" type="text" placeholder="Buscar en ${state.activeTab}..." value="${escapeAttr(state.searchTerm)}" />
+        ${searchBox}
       </div>`;
+    }
+
+    function renderWidgetPanel() {
+      const currentUrl = window.location.href.split('?')[0];
+      const iframeCode = `<iframe src="${currentUrl}?embed=true&type=${state.widgetType}" width="100%" height="800" frameborder="0" style="width:100%; max-width:100%; border:0; display:block; overflow:hidden; background:transparent;"></iframe>`;
+      return `<section class="widget-panel">
+        <div class="widget-head"><h2>Widget para copiar y pegar</h2></div>
+        <div class="widget-body">
+          <div class="widget-selector">
+            <strong>Seleccioná qué cuadro querés insertar:</strong>
+            <div class="top-tabs">
+              <button class="tab-btn ${state.widgetType === 'cursos' ? 'active' : ''}" onclick="setWidgetType('cursos')">Cursos</button>
+              <button class="tab-btn ${state.widgetType === 'carreras' ? 'active' : ''}" onclick="setWidgetType('carreras')">Carreras</button>
+            </div>
+          </div>
+          <pre class="widget-code">${escapeHTML(iframeCode)}</pre>
+          <button class="copy-widget-btn" onclick="copyWidgetCode()">${state.copied ? 'Código copiado' : 'Copiar código'}</button>
+        </div>
+      </section>`;
     }
 
     function render() {
       const app = document.getElementById('app');
       let html = renderControls();
-      if (state.loading) {
+      if (state.activeTab === 'widget') {
+        html += renderWidgetPanel();
+      } else if (state.loading) {
         html += `<div class="status-box"><i data-lucide="refresh-cw" class="animate-spin" style="width:42px;height:42px;color:#0f172a"></i><h3 class="mt-4 text-xl font-black text-slate-800">Sincronizando datos...</h3></div>`;
       } else if (state.error) {
         html += `<div class="status-box error-box"><i data-lucide="alert-triangle" style="width:42px;height:42px;color:#f43f5e"></i><h3 class="mt-4 text-xl font-black">Problema de conexión</h3><p class="mt-2 font-bold">${escapeHTML(state.error)}</p><button class="tab-btn active mt-5" onclick="fetchData()">Reintentar conexión</button></div>`;
@@ -351,10 +431,48 @@
     }
 
     window.switchType = function(type) {
+      if (type === 'widget') {
+        state.activeTab = 'widget';
+        state.searchTerm = '';
+        render();
+        return;
+      }
       state.activeTab = type === 'carreras' ? 'carreras' : 'cursos';
+      state.widgetType = state.activeTab;
       state.searchTerm = '';
       fetchData();
     };
+
+    window.setWidgetType = function(type) {
+      state.widgetType = type === 'carreras' ? 'carreras' : 'cursos';
+      render();
+    };
+
+    window.copyWidgetCode = async function() {
+      const currentUrl = window.location.href.split('?')[0];
+      const iframeCode = `<iframe src="${currentUrl}?embed=true&type=${state.widgetType}" width="100%" height="800" frameborder="0" style="width:100%; max-width:100%; border:0; display:block; overflow:hidden; background:transparent;"></iframe>`;
+      await navigator.clipboard.writeText(iframeCode);
+      state.copied = true;
+      render();
+      setTimeout(() => { state.copied = false; render(); }, 1800);
+    };
+
+    window.togglePaymentMenu = function(id) {
+      document.querySelectorAll('.payment-actions').forEach(el => { if (el.id !== id) el.classList.remove('open'); });
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('open');
+    };
+
+    window.copyPaymentLink = async function(url) {
+      await navigator.clipboard.writeText(url);
+      document.querySelectorAll('.payment-actions').forEach(el => el.classList.remove('open'));
+    };
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.payment-link-box')) {
+        document.querySelectorAll('.payment-actions').forEach(el => el.classList.remove('open'));
+      }
+    });
 
     window.addEventListener('load', fetchData);
   </script>
