@@ -74,11 +74,30 @@
         // --- LÓGICA DE COLORES EXACTOS POR NOMBRE ---
         function normalizeHexColor(value) {
             if (!value) return null;
-            let color = String(value).trim();
-            if (!color) return null;
-            if (/^[0-9A-Fa-f]{6}$/.test(color)) color = `#${color}`;
-            if (/^#[0-9A-Fa-f]{6}$/.test(color)) return color;
+            const text = String(value).trim();
+            if (!text) return null;
+
+            // Acepta tanto una celda que sea solo "#39589A" como una celda con el color debajo del nombre.
+            const matchWithHash = text.match(/#[0-9A-Fa-f]{6}\b/);
+            if (matchWithHash) return matchWithHash[0];
+
+            const matchWithoutHash = text.match(/(?:^|\s)([0-9A-Fa-f]{6})(?:\s|$)/);
+            if (matchWithoutHash) return `#${matchWithoutHash[1]}`;
+
             return null;
+        }
+
+        function cleanDisplayName(value) {
+            return String(value || '')
+                .split(/\r?\n/)
+                .map(line => line.trim())
+                .filter(line => line && !normalizeHexColor(line))
+                .join(' ')
+                .replace(/2x1/ig, '')
+                .replace(/\(\s*\)/g, '')
+                .replace(/-\s*$/g, '')
+                .replace(/\s{2,}/g, ' ')
+                .trim();
         }
 
         function getColumnIndexByKeywords(keywords) {
@@ -89,17 +108,20 @@
         }
 
         function getRowStyle(tab, name, rowIndex, row = []) {
-            // Si en Sheet existe una columna de color/hexa/hex/código, toma ese color como prioridad.
-            // Esto permite manejar cursos y carreras desde Google Sheets sin tocar el código.
+            // En carreras, el color puede venir debajo del nombre dentro de la primera columna.
+            const firstColumnColor = tab === 'carreras' ? normalizeHexColor(name) : null;
+
+            // También se mantiene la posibilidad de usar una columna separada color/hexa/hex/código.
             const colorIndex = getColumnIndexByKeywords(['color', 'hexa', 'hex', 'código', 'codigo']);
             const sheetColor = colorIndex !== -1 ? normalizeHexColor(row[colorIndex]) : null;
+            const selectedColor = firstColumnColor || sheetColor;
 
-            if (sheetColor) {
-                return { bg: sheetColor, text: 'text-white' };
+            if (selectedColor) {
+                return { bg: selectedColor, text: 'text-white' };
             }
 
             if (tab === 'carreras') {
-                const n = name.toLowerCase();
+                const n = cleanDisplayName(name).toLowerCase();
                 // Fallback por palabra clave si la fila todavía no tiene código hexa en Sheet
                 if (n.includes('marketing')) return { bg: '#EF6B01', text: 'text-white' };
                 if (n.includes('administración') || n.includes('administracion')) return { bg: '#8F9E4C', text: 'text-white' };
@@ -483,12 +505,7 @@
                             
                             // Primera columna (Fondo Pintado + Texto dinámico + Plan + 2x1)
                             if (cellIndex === 0) {
-                                let displayName = cellContent;
-                                
-                                // Limpiamos "2x1" del título si está escrito ahí para evitar redundancias
-                                if (is2x1) {
-                                    displayName = displayName.replace(/2x1/ig, '').replace(/\(\s*\)/g, '').replace(/-\s*$/g, '').trim();
-                                }
+                                let displayName = cleanDisplayName(cellContent);
                                 
                                 const planValue = (planIndex !== -1 && row[planIndex]) ? row[planIndex].trim() : null;
                                 
