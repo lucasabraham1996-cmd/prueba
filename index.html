@@ -3,467 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Contenidos CCAP</title>
-    
-    <!-- Tailwind CSS (Framework de diseño Ultra Moderno) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Lucide Icons (Íconos vectoriales modernos) -->
     <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Configuración personalizada de Tailwind -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-out',
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: '0', transform: 'translateY(10px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-
     <style>
-        /* Tipografía importada (Google Fonts - Inter) */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        
-        /* Ocultar scrollbar pero permitir scroll */
-        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background: transparent; }
     </style>
 </head>
-<body id="body-root" class="bg-[#F8FAFC] text-slate-800 font-sans min-h-screen flex flex-col transition-colors duration-300">
+<body class="w-full h-full m-0 p-0">
 
-    <!-- Contenedor Principal renderizado por JS -->
-    <div id="app-root" class="flex-1 w-full max-w-[1800px] mx-auto flex flex-col"></div>
+    <!-- Aquí pegaré tu enlace por defecto para que funcione en GitHub Pages -->
+    <script>
+        const DEFAULT_SHEET_URL = "TU_ENLACE_AQUI"; 
+    </script>
+
+    <div id="app-root" class="w-full p-4">
+        <div id="loading" class="text-slate-600 font-semibold text-center py-10">Cargando datos...</div>
+    </div>
 
     <script>
-        // --- 1. CONFIGURACIÓN Y ESTADO ---
-        const URLS = {
-            cursos: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ37C-OXiUfM2JeZj_91yhe71ZRwfwLh7Im3IbHytbEbHg-Mm2TWuahRDeuypJ6aXSKAYrU6hRDACJ3/pub?output=csv",
-            carreras: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTXqijV2xBtqvXAv17EXrDpJfP67w8zklebNx1X87l4wS2dG4GicqnXD8G4TU5bFX1XSx-xhHmrrE82/pub?output=csv"
-        };
+        const params = new URLSearchParams(window.location.search);
+        const sheetUrl = params.get('sheet') || DEFAULT_SHEET_URL;
 
-        // Paletas de colores y estilos exactos extraídos de tus imágenes
-        const palettes = {
-            cursos: [
-                { bg: '#F29C54', text: 'text-white', badge: 'bg-white/25 text-white' },
-                { bg: '#A6C28F', text: 'text-white', badge: 'bg-white/25 text-white' },
-                { bg: '#3E75C3', text: 'text-white', badge: 'bg-white/25 text-white' }
-            ],
-            carreras: [
-                { bg: '#EF6B01', text: 'text-[#4A4A4A]', badge: 'bg-black/10 text-[#4A4A4A]' }, // Marketing
-                { bg: '#8F9E4C', text: 'text-[#4A4A4A]', badge: 'bg-black/10 text-[#4A4A4A]' }, // Administración
-                { bg: '#B18DB3', text: 'text-[#4A4A4A]', badge: 'bg-black/10 text-[#4A4A4A]' }, // RRHH
-                { bg: '#00A9CB', text: 'text-[#4A4A4A]', badge: 'bg-black/10 text-[#4A4A4A]' }, // Sistemas
-                { bg: '#A68F74', text: 'text-[#4A4A4A]', badge: 'bg-black/10 text-[#4A4A4A]' }, // Des. Web
-                { bg: '#39589A', text: 'text-[#4A4A4A]', badge: 'bg-black/10 text-[#4A4A4A]' }, // IA
-                { bg: '#F2C118', text: 'text-[#4A4A4A]', badge: 'bg-black/10 text-[#4A4A4A]' }, // Higiene
-                { bg: '#B82E34', text: 'text-[#4A4A4A]', badge: 'bg-black/10 text-[#4A4A4A]' }  // Gestión Inm.
-            ]
-        };
-
-        // Estado Global de la App
-        const state = {
-            isEmbed: new URLSearchParams(window.location.search).get('embed') === 'true',
-            urlType: new URLSearchParams(window.location.search).get('type'),
-            activeTab: 'cursos',
-            headers: [],
-            rows: [],
-            loading: true,
-            error: null,
-            searchTerm: '',
-            gadgetType: 'cursos',
-            copied: false
-        };
-
-        // --- 2. INICIALIZACIÓN ---
-        function init() {
-            if (state.isEmbed) {
-                document.getElementById('body-root').classList.remove('bg-[#F8FAFC]');
-                document.getElementById('body-root').classList.add('bg-transparent');
-                state.activeTab = (state.urlType === 'carreras') ? 'carreras' : 'cursos';
+        async function init() {
+            const loadingDiv = document.getElementById('loading');
+            if (sheetUrl === "TU_ENLACE_AQUI") {
+                loadingDiv.innerHTML = "Error: Por favor, configura tu enlace CSV en el código.";
+                return;
             }
 
-            renderApp();
-            
-            if (state.activeTab === 'cursos' || state.activeTab === 'carreras') {
-                fetchData();
-            }
-        }
-
-        // --- 3. LÓGICA DE DATOS ---
-        const parseCSV = (str) => {
-            const arr = [];
-            let quote = false, row = 0, col = 0;
-            for (let c = 0; c < str.length; c++) {
-                let cc = str[c], nc = str[c+1];
-                arr[row] = arr[row] || [];
-                arr[row][col] = arr[row][col] || '';
-
-                if (cc === '"' && quote && nc === '"') { arr[row][col] += cc; ++c; continue; }
-                if (cc === '"') { quote = !quote; continue; }
-                if (cc === ',' && !quote) { ++col; continue; }
-                if (cc === '\r' && nc === '\n' && !quote) { ++row; col = 0; ++c; continue; }
-                if (cc === '\n' && !quote) { ++row; col = 0; continue; }
-                if (cc === '\r' && !quote) { ++row; col = 0; continue; }
-                arr[row][col] += cc;
-            }
-            return arr.filter(row => row.some(cell => cell.trim() !== ''));
-        };
-
-        async function fetchData() {
-            if (state.activeTab !== 'cursos' && state.activeTab !== 'carreras') return;
-            state.loading = true; state.error = null;
-            renderDataContainer();
-            
             try {
-                const response = await fetch(URLS[state.activeTab]);
-                if (!response.ok) throw new Error('No se pudo conectar con Google Sheets.');
-                const text = await response.text();
-                const parsedData = parseCSV(text);
-                
-                if (parsedData.length > 0) {
-                    state.headers = parsedData[0];
-                    state.rows = parsedData.slice(1);
-                } else {
-                    throw new Error('El documento está vacío.');
-                }
+                const res = await fetch(sheetUrl);
+                if (!res.ok) throw new Error("No se pudo conectar al Google Sheet.");
+                const data = await res.text();
+                render(parseCSV(data));
             } catch (err) {
-                state.error = err.message;
-            } finally {
-                state.loading = false;
-                renderDataContainer();
+                loadingDiv.innerHTML = "Error: " + err.message + "<br>Asegúrate de que la hoja esté publicada como CSV.";
             }
         }
 
-        // --- 4. AYUDANTES DE RENDERIZADO ---
-        function getHeaderIcon(headerText) {
-            const text = headerText.toLowerCase();
-            const wrapper = (iconStr, colorClass) => `<div class="flex-shrink-0 w-4 h-4 flex items-center justify-center"><i data-lucide="${iconStr}" class="${colorClass} w-4 h-4" stroke-width="2.5"></i></div>`;
+        function parseCSV(str) {
+            return str.split('\n').filter(row => row.trim() !== '').map(row => 
+                row.split(',').map(c => c.replace(/^"|"$/g, '').trim())
+            );
+        }
+
+        function render(data) {
+            const container = document.getElementById('app-root');
+            const headers = data[0];
+            const rows = data.slice(1);
+            const colorIdx = headers.findIndex(h => h.trim().toLowerCase() === 'color');
+            const planIdx = headers.findIndex(h => h.trim().toLowerCase().includes('plan'));
             
-            if (text.includes('carrera') || text.includes('diplomatura') || text.includes('curso')) return wrapper('graduation-cap', 'text-violet-500');
-            if (text.includes('modalidad')) return wrapper('monitor', 'text-emerald-500');
-            if (text.includes('inicio') || text.includes('fecha')) return wrapper('calendar', 'text-blue-500');
-            if (text.includes('día') || text.includes('horario')) return wrapper('clock', 'text-orange-500');
-            if (text.includes('duraci')) return wrapper('timer', 'text-rose-500');
-            if (text.includes('docente')) return wrapper('user', 'text-violet-500');
-            if (text.includes('precio') || text.includes('$') || text.includes('cuota') || text.includes('matrícula') || text.includes('arancel')) return wrapper('dollar-sign', 'text-emerald-500');
-            if (text.includes('pdf') || text.includes('plan')) return wrapper('file-text', 'text-rose-500');
-            return wrapper('check-circle', 'text-slate-400');
-        }
-
-        function isCenterAligned(headerText) {
-            const h = headerText.toLowerCase();
-            return h.includes('precio') || h.includes('alumnos') || h.includes('empresas') || h.includes('pdf') || h.includes('$') || h.includes('cuota') || h.includes('matrícula');
-        }
-
-        function renderCellHTML(content, headerName) {
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
-            const isPriceCol = isCenterAligned(headerName) && !headerName.toLowerCase().includes('pdf');
-            const alignClass = isPriceCol || headerName.toLowerCase().includes('pdf') ? "md:items-center md:text-center items-end text-right" : "md:items-start md:text-left items-end text-right";
+            let html = `<table class="w-full border-separate border-spacing-y-3">`;
             
-            if (headerName.toLowerCase().includes('modalidad')) {
-                return `<span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 tracking-wide border border-slate-200/60 whitespace-nowrap">${content}</span>`;
-            }
-            
-            if (urlRegex.test(content) || isPriceCol) {
-                const parts = content.split(urlRegex);
-                let html = `<div class="flex flex-col gap-2 w-full ${alignClass}">`;
-                
-                parts.forEach(part => {
-                    if (part.match(urlRegex)) {
-                        const isPDF = headerName.toLowerCase().includes('pdf') || part.toLowerCase().includes('drive.google') || part.toLowerCase().endsWith('.pdf');
-                        if (isPDF) {
-                            html += `
-                            <a href="${part}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 mt-1 bg-white hover:bg-rose-50 text-rose-600 text-xs font-bold rounded-full transition-all duration-200 border border-rose-200 shadow-sm hover:shadow whitespace-nowrap w-fit">
-                                <i data-lucide="file-text" class="w-3.5 h-3.5" stroke-width="2.5"></i> Ver PDF
-                            </a>`;
-                        } else {
-                            html += `
-                            <a href="${part}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 mt-1 bg-[#009EE3] hover:bg-[#008ACA] text-white text-xs font-bold rounded-full transition-all duration-300 shadow-[0_4px_14px_0_rgba(0,158,227,0.39)] hover:shadow-[0_6px_20px_rgba(0,158,227,0.23)] hover:-translate-y-0.5 whitespace-nowrap group w-fit">
-                                <div class="bg-white/20 p-1 rounded-full"><i data-lucide="external-link" class="w-3 h-3 group-hover:scale-110 transition-transform" stroke-width="2.5"></i></div>
-                                Link de pago
-                            </a>`;
-                        }
-                    } else if (part.trim() !== '') {
-                        let displayText = part.trim();
-                        if (isPriceCol) {
-                            const numericString = displayText.replace(/[^\d]/g, '');
-                            if (numericString.length > 0) {
-                                displayText = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(parseInt(numericString, 10));
-                            }
-                        }
-                        html += `<span class="whitespace-pre-line font-bold text-slate-800 text-[14px] md:text-[15px] tracking-tight">${displayText}</span>`;
-                    }
-                });
-                html += `</div>`;
-                return html;
-            }
-            
-            return `<div class="flex flex-col w-full ${alignClass}"><span class="whitespace-pre-line text-[13px] md:text-[14px] text-slate-600 font-medium leading-relaxed">${content}</span></div>`;
-        }
+            rows.forEach(row => {
+                const color = (colorIdx !== -1 && row[colorIdx]) ? row[colorIdx].trim() : '#F3F4F6';
+                const is2x1 = row.some(cell => cell.toLowerCase().includes('2x1'));
+                const name = row[0];
+                const plan = (planIdx !== -1 && row[planIdx]) ? row[planIdx] : '';
 
-        // --- 5. FUNCIONES DE ACTUALIZACIÓN DOM ---
-        function switchTab(tabId) {
-            state.activeTab = tabId;
-            state.searchTerm = '';
-            renderApp();
-            if (tabId === 'cursos' || tabId === 'carreras') {
-                fetchData();
-            }
-        }
-
-        window.setGadgetType = function(type) {
-            state.gadgetType = type;
-            renderTabContent();
-        }
-
-        window.copyEmbedCode = function() {
-            const currentUrl = window.location.href.split('?')[0];
-            const iframeCode = `<iframe src="${currentUrl}?embed=true&type=${state.gadgetType}" width="100%" height="800" frameborder="0" style="border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 40px -10px rgb(0 0 0 / 0.1); background: transparent;"></iframe>`;
-            navigator.clipboard.writeText(iframeCode);
-            state.copied = true;
-            renderTabContent();
-            setTimeout(() => { state.copied = false; renderTabContent(); }, 2000);
-        }
-
-        // --- 6. PLANTILLAS DE RENDERIZADO ---
-        function renderApp() {
-            const root = document.getElementById('app-root');
-            let html = '';
-            
-            if (!state.isEmbed) {
-                const baseName = (state.activeTab === 'cursos' || state.activeTab === 'carreras') ? (state.activeTab.charAt(0).toUpperCase() + state.activeTab.slice(1)) : '';
-                const activeBtnClass = "bg-white text-slate-900 shadow-[0_2px_10px_rgb(0,0,0,0.06)]";
-                const inactiveBtnClass = "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50";
-                
                 html += `
-                <header class="bg-white/70 backdrop-blur-xl border border-slate-200/60 px-5 md:px-8 py-5 flex flex-col xl:flex-row justify-between items-center shadow-[0_8px_30px_rgb(0,0,0,0.04)] z-20 sticky top-4 rounded-3xl mb-6 mx-auto w-full max-w-[1800px] mt-4 sm:mt-6">
-                    <div class="flex items-center gap-4 mb-5 xl:mb-0 w-full xl:w-auto">
-                        <div class="bg-slate-900 text-white p-3.5 rounded-2xl shadow-md hidden sm:block">
-                            <i data-lucide="layout-grid" class="w-5 h-5" stroke-width="2.5"></i>
+                <tr class="bg-white shadow-sm hover:shadow-md transition-shadow border border-slate-100 rounded-2xl overflow-hidden">
+                    <td style="background-color: ${color}" class="p-6 w-[30%]">
+                        <div class="flex flex-col gap-2">
+                            <span class="font-black text-lg text-slate-900">${name}</span>
+                            <div class="flex gap-2 flex-wrap">
+                                ${plan ? `<span class="bg-black/10 px-2 py-0.5 rounded text-[10px] font-bold uppercase text-slate-800">${plan}</span>` : ''}
+                                ${is2x1 ? `<span class="bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-black uppercase animate-pulse">2x1</span>` : ''}
+                            </div>
                         </div>
-                        <div>
-                            <h1 class="text-xl md:text-2xl font-black text-slate-900 tracking-tight">Gestor de Contenidos</h1>
-                            <p class="text-xs md:text-sm font-semibold text-slate-500 flex items-center gap-2 mt-1">
-                                <span class="relative flex h-2.5 w-2.5">
-                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                                </span>
-                                ${baseName ? `Base activa: <span class="text-slate-800">${baseName}</span>` : 'Modo de Configuración'}
-                            </p>
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap justify-center bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/60 shadow-inner w-full xl:w-auto">
-                        <button onclick="switchTab('cursos')" class="flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-[13px] md:text-sm font-bold transition-all duration-300 flex-1 xl:flex-none ${state.activeTab === 'cursos' ? activeBtnClass : inactiveBtnClass}">
-                            <i data-lucide="book-open" class="w-4 h-4" stroke-width="2.5"></i> <span class="hidden sm:inline">Cursos</span>
-                        </button>
-                        <button onclick="switchTab('carreras')" class="flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-[13px] md:text-sm font-bold transition-all duration-300 flex-1 xl:flex-none ${state.activeTab === 'carreras' ? activeBtnClass : inactiveBtnClass}">
-                            <i data-lucide="graduation-cap" class="w-4 h-4" stroke-width="2.5"></i> <span class="hidden sm:inline">Carreras</span>
-                        </button>
-                        <div class="w-px bg-slate-300 mx-1 hidden sm:block"></div>
-                        <button onclick="switchTab('gadget')" class="flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-[13px] md:text-sm font-bold transition-all duration-300 flex-1 xl:flex-none ${state.activeTab === 'gadget' ? 'bg-white text-violet-600 shadow-[0_2px_10px_rgb(0,0,0,0.06)]' : inactiveBtnClass}">
-                            <i data-lucide="code" class="w-4 h-4" stroke-width="2.5"></i> <span class="hidden sm:inline">Gadget</span>
-                        </button>
-                    </div>
-                </header>`;
-            }
-
-            html += `<main class="flex-1 w-full max-w-[1800px] mx-auto ${state.isEmbed ? 'p-1 sm:p-2' : ''}" id="tab-content"></main>`;
-            root.innerHTML = html;
-            renderTabContent();
-        }
-
-        function renderTabContent() {
-            const main = document.getElementById('tab-content');
+                    </td>
+                    ${headers.map((h, i) => {
+                        if (i === 0 || i === colorIdx || i === planIdx) return '';
+                        return `<td class="p-6 text-sm font-semibold text-slate-700 border-l border-slate-50">${row[i] || '-'}</td>`;
+                    }).join('')}
+                </tr>`;
+            });
             
-            if (state.activeTab === 'cursos' || state.activeTab === 'carreras') {
-                main.innerHTML = `
-                <div class="space-y-4 md:space-y-6 animate-fade-in pb-12">
-                    <div class="flex flex-col sm:flex-row justify-between items-center bg-white/60 backdrop-blur-2xl p-2.5 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 gap-3 ${state.isEmbed ? 'sticky top-2 z-10' : ''}">
-                        <div class="relative w-full sm:w-[400px]">
-                            <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" stroke-width="2.5"></i>
-                            <input type="text" id="search-input" placeholder="Buscar en ${state.activeTab}..." value="${state.searchTerm}"
-                                class="pl-12 pr-4 py-3.5 bg-white/50 border border-slate-200/50 rounded-2xl text-[14px] w-full focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all font-semibold text-slate-800 placeholder-slate-400 shadow-inner" />
-                        </div>
-                        <button id="btn-refresh" class="flex items-center gap-2 px-6 py-3.5 bg-slate-900 text-white hover:bg-slate-800 hover:-translate-y-0.5 active:translate-y-0 rounded-2xl text-[14px] font-bold transition-all shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] w-full sm:w-auto justify-center">
-                            <i data-lucide="refresh-cw" class="w-4 h-4 ${state.loading ? 'animate-spin' : ''}" stroke-width="2.5"></i> Actualizar
-                        </button>
-                    </div>
-                    <div id="data-container"></div>
-                </div>`;
-
-                document.getElementById('search-input').addEventListener('input', (e) => {
-                    state.searchTerm = e.target.value;
-                    renderDataContainer();
-                });
-                document.getElementById('btn-refresh').addEventListener('click', fetchData);
-                renderDataContainer();
-                
-            } else if (state.activeTab === 'gadget') {
-                const currentUrl = window.location.href.split('?')[0];
-                const iframeStr = `&lt;iframe \n  src="TU_ENLACE_AQUI?embed=true&type=${state.gadgetType}" \n  width="100%" \n  height="800" \n  frameborder="0" \n  style="border-radius: 24px; border: 1px solid #e2e8f0; box-shadow: 0 10px 40px -10px rgb(0 0 0 / 0.08); background: transparent;"&gt;\n&lt;/iframe&gt;`;
-                
-                main.innerHTML = `
-                <div class="max-w-4xl mx-auto space-y-6 mt-6 animate-fade-in pb-12">
-                    <div class="bg-amber-50/80 backdrop-blur-sm border border-amber-200 p-8 rounded-3xl shadow-sm flex flex-col sm:flex-row gap-5 items-start">
-                        <div class="bg-amber-100 p-3 rounded-2xl flex-shrink-0"><i data-lucide="alert-triangle" class="text-amber-600 w-7 h-7" stroke-width="2.5"></i></div>
-                        <div>
-                            <h3 class="font-black text-amber-900 text-xl tracking-tight">Paso final para tu Web</h3>
-                            <p class="text-amber-800/90 mt-2 font-medium leading-relaxed">Para que este componente funcione en tu plataforma, copia el código de abajo y reemplaza <code class="bg-white/60 px-2 py-0.5 rounded-md font-bold border border-amber-200 shadow-sm text-amber-900">TU_ENLACE_AQUI</code> por el link real donde hospedes este archivo <strong>index.html</strong> (ej. en Vercel, Netlify o tu propio servidor).</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 overflow-hidden">
-                        <div class="bg-slate-900 px-10 py-10 text-white relative overflow-hidden">
-                            <div class="absolute top-0 right-0 w-80 h-80 bg-violet-500/30 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3"></div>
-                            <h2 class="text-3xl md:text-4xl font-black flex items-center gap-4 relative z-10 tracking-tight">
-                                <div class="bg-white/10 p-2.5 rounded-2xl backdrop-blur-md border border-white/10"><i data-lucide="code" class="text-violet-300 w-7 h-7" stroke-width="2.5"></i></div> Generador de Gadget
-                            </h2>
-                        </div>
-                        <div class="p-8 md:p-10">
-                            <div class="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between bg-slate-50/80 p-5 rounded-2xl border border-slate-200/60">
-                                <label class="font-bold text-slate-800 mb-3 sm:mb-0 text-lg">Selecciona la base a mostrar:</label>
-                                <div class="flex bg-white rounded-xl p-1.5 border border-slate-200 shadow-sm w-full sm:w-auto">
-                                    <button onclick="setGadgetType('cursos')" class="flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${state.gadgetType === 'cursos' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}">Cursos</button>
-                                    <button onclick="setGadgetType('carreras')" class="flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${state.gadgetType === 'carreras' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}">Carreras</button>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-slate-900 rounded-3xl p-6 md:p-8 relative group shadow-2xl overflow-hidden">
-                                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 via-blue-500 to-emerald-500"></div>
-                                <div class="absolute top-5 right-5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onclick="copyEmbedCode()" class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all shadow-lg hover:-translate-y-0.5 ${state.copied ? 'bg-emerald-500 shadow-emerald-500/25' : 'bg-white/20 hover:bg-white/30 backdrop-blur-md'}">
-                                        <i data-lucide="${state.copied ? 'check' : 'copy'}" class="w-4 h-4" stroke-width="${state.copied ? '3' : '2.5'}"></i>
-                                        ${state.copied ? '¡Copiado!' : 'Copiar código HTML'}
-                                    </button>
-                                </div>
-                                <pre class="text-[13px] md:text-[14px] font-mono text-blue-300 overflow-x-auto whitespace-pre-wrap leading-relaxed mt-2 pb-4 custom-scrollbar">${iframeStr}</pre>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-            }
-            lucide.createIcons();
+            html += `</table>`;
+            container.innerHTML = html;
         }
 
-        function renderDataContainer() {
-            const container = document.getElementById('data-container');
-            if (state.loading) {
-                container.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-40 bg-white/40 backdrop-blur-sm rounded-3xl border border-slate-200/50">
-                    <i data-lucide="refresh-cw" class="animate-spin text-slate-800 mb-5 w-10 h-10"></i>
-                    <p class="text-lg font-bold text-slate-800 tracking-tight">Sincronizando datos...</p>
-                </div>`;
-            } else if (state.error) {
-                container.innerHTML = `
-                <div class="bg-rose-50/80 backdrop-blur-md border border-rose-200 p-10 rounded-3xl flex flex-col items-center justify-center text-center max-w-2xl mx-auto mt-10 shadow-sm">
-                    <i data-lucide="alert-triangle" class="mb-5 text-rose-500 w-12 h-12" stroke-width="2"></i>
-                    <h3 class="text-2xl font-black mb-2 text-rose-900 tracking-tight">Problema de conexión</h3>
-                    <p class="font-medium text-rose-700/80 text-lg">${state.error}</p>
-                    <button onclick="fetchData()" class="mt-8 px-8 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">Reintentar conexión</button>
-                </div>`;
-            } else {
-                const term = state.searchTerm.toLowerCase();
-                const filteredRows = state.rows.filter(row => row.some(cell => cell && cell.toLowerCase().includes(term)));
-                const planIndex = state.headers.findIndex(h => h.toLowerCase().includes('plan'));
-                
-                // Extraer el esquema de color y texto adecuado para la pestaña actual
-                const currentPalette = palettes[state.activeTab] || palettes.cursos;
-                
-                let html = `<div class="w-full"><table class="w-full text-sm text-left border-separate md:border-spacing-y-4 block md:table">`;
-                
-                // --- Encabezados ---
-                html += `<thead class="hidden md:table-header-group"><tr>`;
-                state.headers.forEach((header, index) => {
-                    if (index === planIndex) return;
-                    const widthClass = index === 0 ? 'w-[25%]' : '';
-                    const alignClass = isCenterAligned(header) ? 'justify-center' : '';
-                    html += `
-                    <th class="px-6 py-2 font-bold text-slate-400 uppercase tracking-widest text-[10px] ${isCenterAligned(header) ? 'text-center' : 'text-left'} ${widthClass}">
-                        <div class="flex items-center gap-2.5 ${alignClass}">
-                            ${getHeaderIcon(header)} ${header}
-                        </div>
-                    </th>`;
-                });
-                html += `</tr></thead>`;
-
-                // --- Cuerpo ---
-                html += `<tbody class="block md:table-row-group pb-10">`;
-                
-                if (filteredRows.length > 0) {
-                    filteredRows.forEach((row, rowIndex) => {
-                        // Obtener los estilos precisos para la fila actual según la pestaña
-                        const rowStyle = currentPalette[rowIndex % currentPalette.length];
-                        
-                        html += `<tr class="flex flex-col md:table-row bg-white shadow-[0_2px_12px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:border-slate-300/80 transition-all duration-300 group rounded-3xl relative mb-5 md:mb-0 border border-slate-200/60 overflow-hidden">`;
-                        
-                        state.headers.forEach((headerName, cellIndex) => {
-                            if (cellIndex === planIndex) return;
-                            const cellContent = row[cellIndex] || "";
-                            
-                            // Primera columna (Fondo Pintado + Texto dinámico + Plan)
-                            if (cellIndex === 0) {
-                                const planValue = (planIndex !== -1 && row[planIndex]) ? row[planIndex].trim() : null;
-                                const planBadge = planValue ? `<span class="inline-flex items-center mt-2 md:mt-0 md:ml-3 px-2.5 py-0.5 ${rowStyle.badge} text-[11px] font-bold rounded-md tracking-wide uppercase">(${planValue})</span>` : '';
-                                
-                                html += `
-                                <td style="background-color: ${rowStyle.bg};" class="p-0 border-b border-slate-100 md:border-b-0 relative block md:table-cell md:rounded-l-3xl rounded-t-3xl md:rounded-tr-none">
-                                    <div class="pl-7 pr-5 py-5 flex flex-col justify-center h-full">
-                                        <div class="font-bold ${rowStyle.text} text-[16px] md:text-[15px] leading-snug tracking-tight">
-                                            ${cellContent} ${planBadge}
-                                        </div>
-                                    </div>
-                                </td>`;
-                            } else {
-                                // Resto de columnas
-                                const isPriceCol = headerName.toLowerCase().includes('precio') || headerName.toLowerCase().includes('alumnos') || headerName.toLowerCase().includes('empresas') || headerName.toLowerCase().includes('cuota') || headerName.toLowerCase().includes('matrícula');
-                                const bgClass = isPriceCol ? 'md:bg-slate-50/40 bg-slate-50/20' : '';
-                                
-                                html += `
-                                <td class="px-5 py-4 align-middle border-b md:border-b-0 border-slate-50 last:border-b-0 flex justify-between items-center md:table-cell ${bgClass}">
-                                    <span class="md:hidden font-bold text-slate-400 text-[11px] uppercase tracking-widest w-[40%] flex items-center gap-2">
-                                        ${getHeaderIcon(headerName)} ${headerName}
-                                    </span>
-                                    <div class="w-[60%] flex flex-col items-end md:items-start md:block md:w-auto">
-                                        ${renderCellHTML(cellContent, headerName)}
-                                    </div>
-                                </td>`;
-                            }
-                        });
-                        html += `</tr>`;
-                    });
-                } else {
-                    html += `
-                    <tr class="block md:table-row">
-                        <td colspan="${state.headers.length}" class="block md:table-cell px-4 py-24 text-center bg-white/50 backdrop-blur-sm rounded-3xl border border-slate-200/50">
-                            <div class="flex flex-col items-center justify-center text-slate-300">
-                                <i data-lucide="search" class="mb-5 text-slate-200 w-12 h-12" stroke-width="1.5"></i>
-                                <p class="text-xl font-bold text-slate-500 tracking-tight">No se encontró "${state.searchTerm}"</p>
-                            </div>
-                        </td>
-                    </tr>`;
-                }
-                
-                html += `</tbody></table></div>`;
-                container.innerHTML = html;
-            }
-            lucide.createIcons();
-        }
-
-        // --- ARRANQUE ---
         window.onload = init;
     </script>
 </body>
