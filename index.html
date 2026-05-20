@@ -7,58 +7,434 @@
   <title>Widget CCAP - Cursos y Carreras</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     * { box-sizing: border-box; }
-    html, body { width: 100%; margin: 0; padding: 0; overflow-x: hidden; }
-    body { font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f8fafc; color: #0f2742; }
-    .ccap-wrap { width: 100%; max-width: none; margin: 0; padding: 14px; }
+    html, body { width: 100%; min-width: 0; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f8fafc;
+      color: #0f2742;
+      overflow-x: hidden;
+    }
     body.embed { background: transparent; }
+    #app, .ccap-wrap {
+      width: 100%;
+      max-width: 100%;
+      min-height: 100vh;
+    }
+    .ccap-wrap {
+      margin: 0;
+      padding: 14px;
+    }
     body.embed .ccap-wrap { padding: 0; }
-    .ccap-table { width: 100%; border-collapse: separate; border-spacing: 0 14px; table-layout: auto; }
-    .ccap-table thead th { padding: 0 18px 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .14em; color: #94a3b8; white-space: nowrap; }
-    .ccap-row { background: #fff; box-shadow: 0 3px 18px rgba(15, 23, 42, .045); transition: box-shadow .2s ease, transform .2s ease; }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      padding: 12px;
+      border-radius: 22px;
+      border: 1px solid #e2e8f0;
+      background: rgba(255,255,255,.78);
+      backdrop-filter: blur(16px);
+    }
+    .controls input {
+      width: min(420px, 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 13px 15px;
+      font-weight: 700;
+      outline: none;
+      color: #0f2742;
+      background: white;
+    }
+    .top-tabs { display:flex; gap:8px; flex-wrap:wrap; }
+    .tab-btn {
+      border: 0;
+      cursor: pointer;
+      padding: 11px 16px;
+      border-radius: 14px;
+      font-weight: 900;
+      color: #475569;
+      background: #f1f5f9;
+      transition: .2s ease;
+    }
+    .tab-btn.active { background: #0f172a; color: white; }
+
+    .table-shell {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      -webkit-overflow-scrolling: touch;
+    }
+    .ccap-table {
+      width: 100%;
+      min-width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 12px;
+      table-layout: fixed;
+    }
+    .ccap-table thead th {
+      padding: 0 10px 8px;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: #94a3b8;
+      white-space: normal;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+    .header-with-icon { display:flex; align-items:center; gap:8px; }
+    .header-with-icon.justify-center { justify-content:center; }
+
+    .ccap-row {
+      background: #fff;
+      box-shadow: 0 3px 18px rgba(15, 23, 42, .045);
+      transition: box-shadow .2s ease, transform .2s ease;
+    }
     .ccap-row:hover { box-shadow: 0 8px 28px rgba(15, 23, 42, .08); }
-    .ccap-row td { padding: 18px 20px; vertical-align: middle; border-top: 1px solid rgba(226,232,240,.65); border-bottom: 1px solid rgba(226,232,240,.65); }
-    .ccap-row td:first-child { border-left: 1px solid rgba(226,232,240,.65); border-radius: 22px 0 0 22px; width: 320px; min-width: 260px; }
-    .ccap-row td:last-child { border-right: 1px solid rgba(226,232,240,.65); border-radius: 0 22px 22px 0; }
-    .first-cell { min-height: 58px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
-    .career-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 15px; line-height: 1.22; font-weight: 850; letter-spacing: -.015em; }
-    .plan-badge { display: inline-flex; align-items: center; width: fit-content; padding: 3px 8px; border-radius: 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; background: rgba(255,255,255,.24); border: 1px solid rgba(255,255,255,.24); }
-    .badge-2x1 { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 999px; font-size: 11px; line-height: 1; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; background: #ef1746; color: #fff; border: 2px solid rgba(255,255,255,.78); box-shadow: 0 8px 18px rgba(239,23,70,.26); }
+    .ccap-row td {
+      padding: 14px 12px;
+      vertical-align: middle;
+      border-top: 1px solid rgba(226,232,240,.65);
+      border-bottom: 1px solid rgba(226,232,240,.65);
+      font-size: 13px;
+    }
+    .ccap-row td:first-child {
+      border-left: 1px solid rgba(226,232,240,.65);
+      border-radius: 22px 0 0 22px;
+      width: 240px;
+      min-width: 240px;
+    }
+    .ccap-row td:last-child {
+      border-right: 1px solid rgba(226,232,240,.65);
+      border-radius: 0 22px 22px 0;
+    }
+    .first-cell {
+      min-height: 78px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+    }
+    .career-title {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 15px;
+      line-height: 1.25;
+      font-weight: 850;
+      letter-spacing: -.015em;
+    }
+    .plan-badge {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      background: rgba(255,255,255,.20);
+      border: 1px solid rgba(255,255,255,.28);
+      backdrop-filter: blur(10px);
+    }
+    .badge-2x1 {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      line-height: 1;
+      font-weight: 950;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      background: #ef1746;
+      color: #fff;
+      border: 2px solid rgba(255,255,255,.78);
+      box-shadow: 0 8px 18px rgba(239,23,70,.26);
+    }
+    .row-actions {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top: 2px;
+    }
+    .info-btn {
+      border: 1px solid rgba(255,255,255,.32);
+      background: rgba(255,255,255,.18);
+      color: inherit;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 11px;
+      font-weight: 900;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
+    }
     .mobile-label { display: none; }
-    .modality-pill { display: inline-flex; align-items: center; justify-content: center; padding: 8px 14px; border-radius: 999px; background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f2742; font-size: 11px; font-weight: 800; white-space: nowrap; }
-    .price { font-weight: 900; color: #061d36; font-size: 15px; white-space: nowrap; }
-    .normal-text { color: #18324d; font-size: 14px; font-weight: 600; line-height: 1.45; white-space: pre-line; }
-    .pdf-btn, .link-btn { display: inline-flex; align-items: center; gap: 7px; width: fit-content; border-radius: 999px; padding: 9px 14px; font-size: 12px; font-weight: 900; text-decoration: none; transition: transform .2s ease, box-shadow .2s ease; white-space: nowrap; }
+    .cell-content { width: 100%; min-width: 0; }
+    .center-col { text-align: center; }
+    .center-col .cell-content { display:flex; justify-content:center; }
+
+    .modality-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      color: #0f2742;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: normal;
+      text-align: center;
+      line-height: 1.2;
+    }
+    .price {
+      font-weight: 900;
+      color: #061d36;
+      font-size: 14px;
+      white-space: normal;
+      word-break: break-word;
+      line-height: 1.2;
+    }
+    .normal-text {
+      color: #18324d;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.35;
+      white-space: pre-line;
+      word-break: break-word;
+    }
+    .pdf-btn, .link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      width: fit-content;
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-size: 12px;
+      font-weight: 900;
+      text-decoration: none;
+      transition: transform .2s ease, box-shadow .2s ease;
+      white-space: nowrap;
+      border: 0;
+      cursor: pointer;
+    }
     .pdf-btn { background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; }
     .link-btn { background: #009ee3; color: white; box-shadow: 0 8px 18px rgba(0,158,227,.22); }
     .pdf-btn:hover, .link-btn:hover { transform: translateY(-1px); }
-    .controls { display: flex; gap: 12px; justify-content: space-between; align-items: center; margin-bottom: 18px; padding: 12px; border-radius: 22px; border: 1px solid #e2e8f0; background: rgba(255,255,255,.72); backdrop-filter: blur(16px); }
-    .controls input { width: min(420px, 100%); border: 1px solid #e2e8f0; border-radius: 16px; padding: 13px 15px; font-weight: 700; outline: none; }
-    .tab-btn { border: 0; cursor: pointer; padding: 11px 16px; border-radius: 14px; font-weight: 900; color: #475569; background: #f1f5f9; }
-    .tab-btn.active { background: #0f172a; color: white; }
-    .status-box { width: 100%; min-height: 240px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 26px; border: 1px solid #e2e8f0; background: rgba(255,255,255,.78); text-align: center; padding: 30px; }
-    .error-box { background: #fff1f2; border-color: #fecdd3; color: #be123c; }
-    .header-with-icon { display: flex; align-items: center; gap: 9px; }
-    .center-col { text-align: center; }
-    .center-col .cell-content { display: flex; justify-content: center; }
-    .cell-content { width: 100%; }
 
-    .top-tabs { display:flex; gap:8px; flex-wrap:wrap; }
-    .widget-panel { max-width: 960px; margin: 18px auto 0; background: #fff; border: 1px solid #e2e8f0; border-radius: 28px; overflow: hidden; box-shadow: 0 8px 30px rgba(15,23,42,.06); }
+    .payment-link-box {
+      position: relative;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      width: 100%;
+    }
+    .payment-price {
+      font-size: 13px;
+      font-weight: 950;
+      color:#061d36;
+      white-space: pre-line;
+      text-align:center;
+      line-height: 1.3;
+    }
+    .payment-actions {
+      position: absolute;
+      z-index: 50;
+      top: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 155px;
+      background:#fff;
+      border:1px solid #e2e8f0;
+      border-radius:16px;
+      box-shadow:0 16px 38px rgba(15,23,42,.18);
+      padding:7px;
+      display:none;
+    }
+    .payment-actions.open { display:block; }
+    .payment-actions a, .payment-actions button {
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      border:0;
+      background:transparent;
+      color:#0f2742;
+      text-decoration:none;
+      padding:10px 12px;
+      border-radius:12px;
+      font-size:12px;
+      font-weight:950;
+      cursor:pointer;
+    }
+    .payment-actions a:hover, .payment-actions button:hover { background:#f1f5f9; }
+
+    .widget-panel {
+      max-width: 980px;
+      margin: 18px auto 0;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 8px 30px rgba(15,23,42,.06);
+    }
     .widget-head { padding: 28px 30px; background: #0f172a; color:#fff; }
     .widget-head h2 { margin:0; font-size: 26px; font-weight: 950; letter-spacing: -.03em; }
     .widget-body { padding: 26px 30px 30px; }
     .widget-selector { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; padding:14px; border-radius:20px; background:#f8fafc; border:1px solid #e2e8f0; margin-bottom:18px; }
-    .widget-code { position:relative; background:#020617; border-radius:22px; padding:22px; overflow:auto; color:#93c5fd; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+    .widget-code { background:#020617; border-radius:22px; padding:22px; overflow:auto; color:#93c5fd; font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
     .copy-widget-btn { margin-top:14px; border:0; cursor:pointer; border-radius:16px; background:#0f172a; color:white; padding:12px 18px; font-weight:950; }
-    .payment-link-box { position: relative; display: inline-flex; flex-direction: column; align-items: center; gap: 7px; width: fit-content; }
-    .payment-price { font-size: 14px; font-weight: 950; color:#061d36; white-space: pre-line; text-align:center; }
-    .payment-actions { position: absolute; z-index: 50; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); min-width: 155px; background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 16px 38px rgba(15,23,42,.18); padding:7px; display:none; }
-    .payment-actions.open { display:block; }
-    .payment-actions a, .payment-actions button { width:100%; display:flex; align-items:center; justify-content:center; gap:7px; border:0; background:transparent; color:#0f2742; text-decoration:none; padding:10px 12px; border-radius:12px; font-size:12px; font-weight:950; cursor:pointer; }
-    .payment-actions a:hover, .payment-actions button:hover { background:#f1f5f9; }
+
+    .status-box {
+      width: 100%;
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 26px;
+      border: 1px solid #e2e8f0;
+      background: rgba(255,255,255,.78);
+      text-align: center;
+      padding: 30px;
+    }
+    .error-box { background: #fff1f2; border-color: #fecdd3; color: #be123c; }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, .55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 9999;
+    }
+    .modal-box {
+      width: min(1100px, 100%);
+      max-height: calc(100vh - 40px);
+      overflow: auto;
+      background: #ffffff;
+      border-radius: 28px;
+      box-shadow: 0 30px 80px rgba(2, 6, 23, .35);
+      border: 1px solid #e2e8f0;
+    }
+    .modal-head {
+      padding: 22px 24px 14px;
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      gap:12px;
+      border-bottom:1px solid #e2e8f0;
+    }
+    .modal-head h3 { margin:0; font-size: 22px; font-weight: 950; color:#0f172a; }
+    .modal-close {
+      border:0; background:#f1f5f9; color:#0f172a; width:42px; height:42px; border-radius:14px; cursor:pointer; font-size:18px; font-weight:900;
+    }
+    .modal-body {
+      display:grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      gap: 18px;
+      padding: 20px 24px 24px;
+    }
+    .picker-card, .preview-wrap {
+      border: 1px solid #e2e8f0;
+      border-radius: 24px;
+      background: #f8fafc;
+      padding: 18px;
+    }
+    .picker-card h4, .preview-wrap h4 {
+      margin:0 0 12px;
+      font-size: 16px;
+      font-weight: 950;
+      color:#0f172a;
+    }
+    .check-list { display:flex; flex-direction:column; gap:10px; }
+    .check-item {
+      display:flex; align-items:flex-start; gap:10px;
+      border:1px solid #e2e8f0; background:#fff; border-radius:16px; padding:10px 12px;
+      font-size: 13px; font-weight:800; color:#18324d;
+    }
+    .check-item input { margin-top: 2px; }
+    .modal-actions {
+      display:flex; flex-wrap:wrap; gap:10px; margin-top:16px;
+    }
+    .modal-btn {
+      border:0; cursor:pointer; border-radius:16px; padding:11px 14px; font-weight:900; font-size:13px;
+    }
+    .modal-btn.primary { background:#0f172a; color:#fff; }
+    .modal-btn.secondary { background:#e2e8f0; color:#0f172a; }
+    .info-card-shell {
+      width: 100%;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      padding: 8px 0 2px;
+    }
+    .info-card {
+      width: 760px;
+      max-width: 100%;
+      background: #fff;
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 18px 42px rgba(15,23,42,.12);
+      border: 1px solid #e2e8f0;
+    }
+    .info-card-top {
+      padding: 22px 24px;
+      color: white;
+    }
+    .info-chip-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .info-chip {
+      display:inline-flex; align-items:center; padding:6px 10px; border-radius:999px; font-size:11px; font-weight:900; letter-spacing:.05em;
+      background: rgba(255,255,255,.20); border:1px solid rgba(255,255,255,.28);
+      color: inherit;
+    }
+    .info-title { margin:0; font-size:30px; line-height:1.1; font-weight:950; letter-spacing:-.03em; }
+    .info-sub { margin:8px 0 0; font-size:14px; font-weight:700; opacity:.96; }
+    .info-card-body { padding: 22px 24px 24px; background:#fff; }
+    .info-grid {
+      display:grid; gap:12px; grid-template-columns: repeat(2, minmax(0,1fr));
+      margin-bottom:16px;
+    }
+    .detail-box {
+      background:#f8fafc; border:1px solid #e2e8f0; border-radius:18px; padding:12px 14px;
+    }
+    .detail-label { font-size:11px; font-weight:900; text-transform:uppercase; color:#64748b; letter-spacing:.08em; }
+    .detail-value { margin-top:4px; font-size:14px; font-weight:850; color:#0f2742; line-height:1.3; white-space:pre-line; }
+    .cost-list { display:grid; gap:12px; }
+    .cost-box {
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      background:#f8fafc; border:1px solid #e2e8f0; border-radius:18px; padding:14px 16px;
+    }
+    .cost-name { font-size:12px; font-weight:900; text-transform:uppercase; color:#64748b; letter-spacing:.08em; }
+    .cost-value { font-size:22px; font-weight:950; color:#0f172a; text-align:right; line-height:1.15; }
+    .brand-foot {
+      margin-top: 16px; padding-top: 14px; border-top:1px solid #e2e8f0;
+      display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;
+      color:#64748b; font-size:12px; font-weight:800;
+    }
+
+    @media (max-width: 1024px) {
+      .modal-body { grid-template-columns: 1fr; }
+    }
     @media (max-width: 900px) {
       .ccap-wrap { padding: 8px; }
       .controls { flex-direction: column; align-items: stretch; }
@@ -66,7 +442,16 @@
       .ccap-table { border-spacing: 0; }
       .ccap-table thead { display: none; }
       .ccap-row { margin-bottom: 16px; border-radius: 22px; overflow: hidden; display: block; }
-      .ccap-row td, .ccap-row td:first-child, .ccap-row td:last-child { border-left: 1px solid rgba(226,232,240,.65); border-right: 1px solid rgba(226,232,240,.65); border-top: 0; border-bottom: 1px solid #eef2f7; border-radius: 0; width: 100%; min-width: 0; padding: 14px 16px; }
+      .ccap-row td, .ccap-row td:first-child, .ccap-row td:last-child {
+        border-left: 1px solid rgba(226,232,240,.65);
+        border-right: 1px solid rgba(226,232,240,.65);
+        border-top: 0;
+        border-bottom: 1px solid #eef2f7;
+        border-radius: 0;
+        width: 100%;
+        min-width: 0;
+        padding: 14px 16px;
+      }
       .ccap-row td:first-child { border-top: 1px solid rgba(226,232,240,.65); border-radius: 22px 22px 0 0; padding: 18px; }
       .ccap-row td:last-child { border-radius: 0 0 22px 22px; }
       .mobile-cell { display: flex !important; align-items: center; justify-content: space-between; gap: 15px; }
@@ -77,6 +462,10 @@
       .career-title { font-size: 16px; }
       .normal-text { font-size: 13px; }
       .price { font-size: 14px; }
+      .info-grid { grid-template-columns: 1fr; }
+      .info-title { font-size: 24px; }
+      .cost-box { flex-direction: column; align-items: flex-start; }
+      .cost-value { text-align: left; font-size: 20px; }
     }
   </style>
 </head>
@@ -98,10 +487,15 @@
       widgetType: initialType,
       headers: [],
       rows: [],
+      currentFilteredRows: [],
       loading: true,
       error: null,
       searchTerm: '',
-      copied: false
+      copied: false,
+      toast: '',
+      modalOpen: false,
+      modalRow: null,
+      modalSelections: {}
     };
 
     let linkCounter = 0;
@@ -161,6 +555,7 @@
       } finally {
         state.loading = false;
         render();
+        notifyParentHeight();
       }
     }
 
@@ -191,18 +586,12 @@
     }
 
     function parseFirstCell(raw) {
-      const lines = String(raw || '')
-        .split(/\r?\n/)
-        .map(l => l.trim())
-        .filter(Boolean);
-
+      const lines = String(raw || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
       const hexLine = lines.find(isHexColor);
       const color = hexLine ? expandHex(hexLine) : null;
-
       const cleanLines = lines.filter(line => !isHexColor(line) && !/^2\s*x\s*1$/i.test(line));
       let name = cleanLines.join(' ').replace(/\b2\s*x\s*1\b/ig, '').replace(/\s{2,}/g, ' ').trim();
       if (!name) name = String(raw || '').replace(/\b2\s*x\s*1\b/ig, '').trim();
-
       return { name, color };
     }
 
@@ -217,7 +606,6 @@
 
     function isHiddenColumn(header, index) {
       const h = normalize(header);
-      // Ocultamos columnas auxiliares, pero seguimos usándolas para detectar color/2x1.
       return h.includes('color') || h.includes('hexa') || h.includes('hexadecimal') || h === '2x1' || h.includes('promocion');
     }
 
@@ -239,14 +627,14 @@
       if (text.includes('horario') || text.includes('hora')) return icon('clock', 'text-orange-500');
       if (text.includes('duraci')) return icon('timer', 'text-rose-500');
       if (text.includes('docente')) return icon('user', 'text-violet-500');
-      if (text.includes('precio') || text.includes('cuota') || text.includes('matricula') || text.includes('$') || text.includes('empresa') || text.includes('pago')) return icon('dollar-sign', 'text-emerald-500');
+      if (text.includes('precio') || text.includes('cuota') || text.includes('matricula') || text.includes('arancel') || text.includes('$') || text.includes('empresa') || text.includes('pago')) return icon('dollar-sign', 'text-emerald-500');
       if (text.includes('pdf') || text.includes('plan')) return icon('file-text', 'text-rose-500');
       return icon('check-circle', 'text-slate-400');
     }
 
     function isCenterAligned(header) {
       const h = normalize(header);
-      return h.includes('precio') || h.includes('cuota') || h.includes('matricula') || h.includes('$') || h.includes('empresa') || h.includes('pago') || h.includes('pdf');
+      return h.includes('precio') || h.includes('cuota') || h.includes('matricula') || h.includes('arancel') || h.includes('$') || h.includes('empresa') || h.includes('pago') || h.includes('pdf');
     }
 
     function formatMoney(text) {
@@ -256,6 +644,87 @@
       const numeric = original.replace(/[^\d]/g, '');
       if (!numeric) return original;
       return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(Number(numeric));
+    }
+
+    function escapeHTML(str) {
+      return String(str || '').replace(/[&<>'"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[s]));
+    }
+    function escapeAttr(str) { return escapeHTML(str); }
+
+    function getPrimaryIndex() {
+      const preferred = state.activeTab === 'carreras' ? ['carrera'] : ['curso', 'diplomatura', 'carrera'];
+      for (const word of preferred) {
+        const idx = headerIndexIncludes([word]);
+        if (idx !== -1) return idx;
+      }
+      const firstVisible = state.headers.findIndex((h, i) => !isHiddenColumn(h, i) && !normalize(h).includes('plan'));
+      return firstVisible !== -1 ? firstVisible : 0;
+    }
+
+    function visibleColumnIndexes() {
+      const primaryIndex = getPrimaryIndex();
+      const planIndex = headerIndexIncludes(['plan']);
+      const rest = state.headers
+        .map((h, i) => ({ h, i }))
+        .filter(({ h, i }) => i !== primaryIndex && i !== planIndex && !isHiddenColumn(h, i))
+        .map(({ i }) => i);
+      return [primaryIndex, ...rest];
+    }
+
+    function isCostHeader(header) {
+      const h = normalize(header);
+      return h.includes('precio') || h.includes('cuota') || h.includes('matricula') || h.includes('arancel') || h.includes('empresa') || h.includes('pago');
+    }
+
+    function isLinkLike(text) {
+      return /https?:\/\//i.test(String(text || ''));
+    }
+
+    function getCostColumnIndexes() {
+      return visibleColumnIndexes().filter(idx => {
+        const header = state.headers[idx] || '';
+        return isCostHeader(header) && !normalize(header).includes('pdf');
+      });
+    }
+
+    function getDetailValue(row, candidates) {
+      const idx = headerIndexIncludes(candidates);
+      if (idx === -1) return '';
+      return String(row[idx] || '').trim();
+    }
+
+    function textToClipboardFallback(text) {
+      const area = document.createElement('textarea');
+      area.value = text;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.focus();
+      area.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(area);
+    }
+
+    async function copyText(text) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          textToClipboardFallback(text);
+        }
+        showToast('Copiado');
+        return true;
+      } catch (e) {
+        try {
+          textToClipboardFallback(text);
+          showToast('Copiado');
+          return true;
+        } catch (err) {
+          showToast('No se pudo copiar');
+          return false;
+        }
+      }
     }
 
     function renderCell(content, header) {
@@ -281,7 +750,7 @@
             <button type="button" class="link-btn" onclick="togglePaymentMenu('${id}')">${getHeaderIcon('link')} Ver link de pago</button>
             <div id="${id}" class="payment-actions">
               <a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer">Ver</a>
-              <button type="button" onclick="copyPaymentLink('${escapeAttr(url)}')">Copiar</button>
+              <button type="button" data-url="${encodeURIComponent(url)}" onclick="copyPaymentLink(this)">Copiar</button>
             </div>
           </div>`;
         }
@@ -292,42 +761,11 @@
       return `<span class="normal-text">${escapeHTML(text)}</span>`;
     }
 
-    function escapeHTML(str) {
-      return String(str || '').replace(/[&<>'"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[s]));
-    }
-
-    function escapeAttr(str) { return escapeHTML(str); }
-
-    function getPrimaryIndex() {
-      // En Carreras priorizamos la columna Carrera; en Cursos, Curso/Diplomatura.
-      const preferred = state.activeTab === 'carreras'
-        ? ['carrera']
-        : ['curso', 'diplomatura', 'carrera'];
-
-      for (const word of preferred) {
-        const idx = headerIndexIncludes([word]);
-        if (idx !== -1) return idx;
-      }
-
-      // Fallback: primera columna visible no auxiliar.
-      const firstVisible = state.headers.findIndex((h, i) => !isHiddenColumn(h, i) && !normalize(h).includes('plan'));
-      return firstVisible !== -1 ? firstVisible : 0;
-    }
-
-    function visibleColumnIndexes() {
-      const primaryIndex = getPrimaryIndex();
-      const planIndex = headerIndexIncludes(['plan']);
-      const rest = state.headers
-        .map((h, i) => ({ h, i }))
-        .filter(({ h, i }) => i !== primaryIndex && i !== planIndex && !isHiddenColumn(h, i))
-        .map(({ i }) => i);
-      return [primaryIndex, ...rest];
-    }
-
     function renderTable() {
       linkCounter = 0;
       const term = normalize(state.searchTerm);
       const rows = state.rows.filter(row => !term || row.some(cell => normalize(cell).includes(term)));
+      state.currentFilteredRows = rows;
       const indexes = visibleColumnIndexes();
       const primaryIndex = indexes[0];
       const planIndex = headerIndexIncludes(['plan']);
@@ -336,8 +774,8 @@
         return `<div class="status-box"><i data-lucide="search" style="width:42px;height:42px;color:#cbd5e1"></i><h3 class="mt-4 text-xl font-black text-slate-700">No se encontraron resultados</h3></div>`;
       }
 
-      let html = `<table class="ccap-table"><thead><tr>`;
-      indexes.forEach((idx, orderIndex) => {
+      let html = `<div class="table-shell"><table class="ccap-table"><thead><tr>`;
+      indexes.forEach((idx) => {
         const header = state.headers[idx] || '';
         html += `<th class="${isCenterAligned(header) ? 'center-col' : ''}"><div class="header-with-icon ${isCenterAligned(header) ? 'justify-center' : ''}">${getHeaderIcon(header)}<span>${escapeHTML(header)}</span></div></th>`;
       });
@@ -346,7 +784,7 @@
       rows.forEach((row, rowIndex) => {
         const firstParsed = parseFirstCell(row[primaryIndex]);
         const color = getRowColor(row, rowIndex, firstParsed);
-        const contrast = '#ffffff';
+        const contrast = getContrastColor(color);
         const has2x1 = rowHas2x1(row);
         const planText = planIndex !== -1 ? String(row[planIndex] || '').trim() : '';
 
@@ -361,6 +799,9 @@
                   ${has2x1 ? '<span class="badge-2x1">2x1</span>' : ''}
                 </div>
                 ${planText && !/\b2\s*x\s*1\b/i.test(planText) ? `<span class="plan-badge" style="color:${contrast};">${escapeHTML(planText)}</span>` : ''}
+                <div class="row-actions">
+                  <button type="button" class="info-btn" onclick="openInfoModal(${rowIndex})">Copiar información</button>
+                </div>
               </div>
             </td>`;
           } else {
@@ -373,7 +814,7 @@
         html += `</tr>`;
       });
 
-      html += `</tbody></table>`;
+      html += `</tbody></table></div>`;
       return html;
     }
 
@@ -392,7 +833,7 @@
 
     function renderWidgetPanel() {
       const currentUrl = window.location.href.split('?')[0];
-      const iframeCode = `<iframe src="${currentUrl}?embed=true&type=${state.widgetType}" width="100%" height="800" frameborder="0" style="width:100%; max-width:100%; border:0; display:block; overflow:hidden; background:transparent;"></iframe>`;
+      const iframeCode = `<iframe src="${currentUrl}?embed=true&type=${state.widgetType}" width="100%" height="100%" frameborder="0" style="width:100%; max-width:100%; height:100vh; min-height:780px; border:0; display:block; overflow:hidden; background:transparent;"></iframe>`;
       return `<section class="widget-panel">
         <div class="widget-head"><h2>Widget para copiar y pegar</h2></div>
         <div class="widget-body">
@@ -409,6 +850,98 @@
       </section>`;
     }
 
+    function buildInfoCardHTML(row) {
+      if (!row) return '';
+      const primaryIndex = getPrimaryIndex();
+      const firstParsed = parseFirstCell(row[primaryIndex]);
+      const color = getRowColor(row, 0, firstParsed);
+      const contrast = getContrastColor(color);
+      const has2x1 = rowHas2x1(row);
+      const planIndex = headerIndexIncludes(['plan']);
+      const planText = planIndex !== -1 ? String(row[planIndex] || '').trim() : '';
+      const modalidad = getDetailValue(row, ['modalidad']);
+      const inicio = getDetailValue(row, ['dia de inicio', 'día de inicio', 'inicio', 'fecha']);
+      const horario = getDetailValue(row, ['horario', 'dia y horario', 'día y horario']);
+      const duracion = getDetailValue(row, ['duracion', 'duración']);
+      const docente = getDetailValue(row, ['docente']);
+
+      const costItems = getCostColumnIndexes()
+        .filter(idx => state.modalSelections[idx])
+        .map(idx => {
+          const header = state.headers[idx] || '';
+          const raw = String(row[idx] || '').trim();
+          const value = isLinkLike(raw) ? '' : formatMoney(raw);
+          if (!value) return '';
+          return `<div class="cost-box"><div class="cost-name">${escapeHTML(header)}</div><div class="cost-value">${escapeHTML(value)}</div></div>`;
+        }).filter(Boolean).join('');
+
+      const detailBlocks = [
+        modalidad ? `<div class="detail-box"><div class="detail-label">Modalidad</div><div class="detail-value">${escapeHTML(modalidad)}</div></div>` : '',
+        inicio ? `<div class="detail-box"><div class="detail-label">Inicio</div><div class="detail-value">${escapeHTML(inicio)}</div></div>` : '',
+        horario ? `<div class="detail-box"><div class="detail-label">Horario</div><div class="detail-value">${escapeHTML(horario)}</div></div>` : '',
+        duracion ? `<div class="detail-box"><div class="detail-label">Duración</div><div class="detail-value">${escapeHTML(duracion)}</div></div>` : '',
+        docente ? `<div class="detail-box"><div class="detail-label">Docente</div><div class="detail-value">${escapeHTML(docente)}</div></div>` : ''
+      ].filter(Boolean).join('');
+
+      return `<div class="info-card" id="infoCardCapture">
+        <div class="info-card-top" style="background:${escapeAttr(color)}; color:${contrast};">
+          <div class="info-chip-row">
+            <span class="info-chip">${state.activeTab === 'carreras' ? 'Carrera' : 'Curso'}</span>
+            ${planText && !/\b2\s*x\s*1\b/i.test(planText) ? `<span class="info-chip">${escapeHTML(planText)}</span>` : ''}
+            ${has2x1 ? `<span class="info-chip" style="background:#ef1746;border-color:rgba(255,255,255,.38);color:#fff;">2x1</span>` : ''}
+          </div>
+          <h2 class="info-title">${escapeHTML(firstParsed.name)}</h2>
+          <p class="info-sub">Información lista para copiar y enviar</p>
+        </div>
+        <div class="info-card-body">
+          ${detailBlocks ? `<div class="info-grid">${detailBlocks}</div>` : ''}
+          <div class="cost-list">${costItems || `<div class="detail-box"><div class="detail-value">No seleccionaste costos para mostrar.</div></div>`}</div>
+          <div class="brand-foot">
+            <span>Institución Cervantes</span>
+            <span>Valores sujetos a actualización</span>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function renderModal() {
+      if (!state.modalOpen || !state.modalRow) return '';
+      const costIndexes = getCostColumnIndexes();
+      const checkboxes = costIndexes.map(idx => {
+        const checked = state.modalSelections[idx] ? 'checked' : '';
+        return `<label class="check-item"><input type="checkbox" ${checked} onchange="toggleInfoField(${idx})" /><span>${escapeHTML(state.headers[idx] || '')}</span></label>`;
+      }).join('');
+
+      return `<div class="modal-overlay" onclick="handleModalOverlay(event)">
+        <div class="modal-box">
+          <div class="modal-head">
+            <h3>Copiar información</h3>
+            <button type="button" class="modal-close" onclick="closeInfoModal()">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="picker-card">
+              <h4>Seleccioná qué costos mostrar</h4>
+              <div class="check-list">${checkboxes || '<div class="detail-box"><div class="detail-value">No se encontraron columnas de costos.</div></div>'}</div>
+              <div class="modal-actions">
+                <button type="button" class="modal-btn primary" onclick="copyInfoImage()">Copiar imagen</button>
+                <button type="button" class="modal-btn secondary" onclick="downloadInfoImage()">Descargar imagen</button>
+                <button type="button" class="modal-btn secondary" onclick="copyInfoText()">Copiar texto</button>
+              </div>
+            </div>
+            <div class="preview-wrap">
+              <h4>Vista previa</h4>
+              <div class="info-card-shell">${buildInfoCardHTML(state.modalRow)}</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function renderToast() {
+      if (!state.toast) return '';
+      return `<div style="position:fixed;right:18px;bottom:18px;z-index:10000;background:#0f172a;color:#fff;padding:12px 16px;border-radius:14px;font-weight:900;box-shadow:0 16px 36px rgba(2,6,23,.25);">${escapeHTML(state.toast)}</div>`;
+    }
+
     function render() {
       const app = document.getElementById('app');
       let html = renderControls();
@@ -421,16 +954,37 @@
       } else {
         html += renderTable();
       }
+      html += renderModal();
+      html += renderToast();
       app.innerHTML = html;
 
       if (!isEmbed) {
         const search = document.getElementById('search');
-        if (search) search.addEventListener('input', e => { state.searchTerm = e.target.value; render(); });
+        if (search) search.addEventListener('input', e => { state.searchTerm = e.target.value; render(); notifyParentHeight(); });
       }
       if (window.lucide) lucide.createIcons();
+      notifyParentHeight();
+    }
+
+    function showToast(message) {
+      state.toast = message;
+      render();
+      clearTimeout(window.__ccapToastTimer);
+      window.__ccapToastTimer = setTimeout(() => {
+        state.toast = '';
+        render();
+      }, 1800);
+    }
+
+    function notifyParentHeight() {
+      const height = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+      try {
+        window.parent.postMessage({ type: 'ccap-widget-height', height }, '*');
+      } catch (e) {}
     }
 
     window.switchType = function(type) {
+      closeInfoModal(false);
       if (type === 'widget') {
         state.activeTab = 'widget';
         state.searchTerm = '';
@@ -450,8 +1004,8 @@
 
     window.copyWidgetCode = async function() {
       const currentUrl = window.location.href.split('?')[0];
-      const iframeCode = `<iframe src="${currentUrl}?embed=true&type=${state.widgetType}" width="100%" height="800" frameborder="0" style="width:100%; max-width:100%; border:0; display:block; overflow:hidden; background:transparent;"></iframe>`;
-      await navigator.clipboard.writeText(iframeCode);
+      const iframeCode = `<iframe src="${currentUrl}?embed=true&type=${state.widgetType}" width="100%" height="100%" frameborder="0" style="width:100%; max-width:100%; height:100vh; min-height:780px; border:0; display:block; overflow:hidden; background:transparent;"></iframe>`;
+      await copyText(iframeCode);
       state.copied = true;
       render();
       setTimeout(() => { state.copied = false; render(); }, 1800);
@@ -463,9 +1017,112 @@
       if (el) el.classList.toggle('open');
     };
 
-    window.copyPaymentLink = async function(url) {
-      await navigator.clipboard.writeText(url);
+    window.copyPaymentLink = async function(button) {
+      const encoded = button ? button.getAttribute('data-url') : '';
+      const url = encoded ? decodeURIComponent(encoded) : '';
+      if (!url) { showToast('No se encontró el link'); return; }
+      await copyText(url);
       document.querySelectorAll('.payment-actions').forEach(el => el.classList.remove('open'));
+    };
+
+    window.openInfoModal = function(filteredIndex) {
+      const row = state.currentFilteredRows[filteredIndex];
+      if (!row) return;
+      state.modalOpen = true;
+      state.modalRow = row;
+      state.modalSelections = {};
+      getCostColumnIndexes().forEach(idx => state.modalSelections[idx] = true);
+      render();
+    };
+
+    window.closeInfoModal = function(shouldRender = true) {
+      state.modalOpen = false;
+      state.modalRow = null;
+      state.modalSelections = {};
+      if (shouldRender) render();
+    };
+
+    window.handleModalOverlay = function(event) {
+      if (event.target.classList.contains('modal-overlay')) closeInfoModal();
+    };
+
+    window.toggleInfoField = function(idx) {
+      state.modalSelections[idx] = !state.modalSelections[idx];
+      render();
+    };
+
+    function getInfoText() {
+      if (!state.modalRow) return '';
+      const row = state.modalRow;
+      const primaryIndex = getPrimaryIndex();
+      const firstParsed = parseFirstCell(row[primaryIndex]);
+      const lines = [];
+      lines.push(firstParsed.name);
+      const modalidad = getDetailValue(row, ['modalidad']);
+      const inicio = getDetailValue(row, ['dia de inicio', 'día de inicio', 'inicio', 'fecha']);
+      const horario = getDetailValue(row, ['horario', 'dia y horario', 'día y horario']);
+      const duracion = getDetailValue(row, ['duracion', 'duración']);
+      if (modalidad) lines.push(`Modalidad: ${modalidad}`);
+      if (inicio) lines.push(`Inicio: ${inicio}`);
+      if (horario) lines.push(`Horario: ${horario}`);
+      if (duracion) lines.push(`Duración: ${duracion}`);
+      const selectedCosts = getCostColumnIndexes().filter(idx => state.modalSelections[idx]);
+      selectedCosts.forEach(idx => {
+        const raw = String(row[idx] || '').trim();
+        if (!raw || isLinkLike(raw)) return;
+        lines.push(`${state.headers[idx]}: ${formatMoney(raw)}`);
+      });
+      return lines.join('\n');
+    }
+
+    async function canvasToBlob(canvas) {
+      return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    }
+
+    async function buildInfoCanvas() {
+      const node = document.getElementById('infoCardCapture');
+      if (!node) return null;
+      return await html2canvas(node, { backgroundColor: null, scale: 2, useCORS: true });
+    }
+
+    window.copyInfoImage = async function() {
+      try {
+        const canvas = await buildInfoCanvas();
+        if (!canvas) throw new Error('No se pudo generar la imagen');
+        const blob = await canvasToBlob(canvas);
+        if (navigator.clipboard && window.ClipboardItem && blob) {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          showToast('Imagen copiada');
+        } else {
+          const link = document.createElement('a');
+          link.download = 'informacion.png';
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+          showToast('Imagen descargada');
+        }
+      } catch (e) {
+        showToast('No se pudo copiar la imagen');
+      }
+    };
+
+    window.downloadInfoImage = async function() {
+      try {
+        const canvas = await buildInfoCanvas();
+        if (!canvas) throw new Error('No se pudo generar la imagen');
+        const link = document.createElement('a');
+        link.download = 'informacion.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showToast('Imagen descargada');
+      } catch (e) {
+        showToast('No se pudo descargar la imagen');
+      }
+    };
+
+    window.copyInfoText = async function() {
+      const text = getInfoText();
+      if (!text) { showToast('No hay información para copiar'); return; }
+      await copyText(text);
     };
 
     document.addEventListener('click', function(e) {
@@ -475,6 +1132,7 @@
     });
 
     window.addEventListener('load', fetchData);
+    window.addEventListener('resize', notifyParentHeight);
   </script>
 </body>
 </html>
